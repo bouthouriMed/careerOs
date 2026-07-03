@@ -1,0 +1,22 @@
+{
+  "platform": {
+    "auth": {
+      "login": {
+        "title": "CareerOS",
+        "subtitle": "نظام التشغيل الذكي لمهنتك",
+        "button": "المتابعة مع Google"
+      },
+      "logout": {
+        "button": "تسجيل الخروج"
+      }
+    },
+    "dashboard": {
+      "title": "لوحة التحكم",
+      "welcome": "مرحباً، {{name}}"
+    },
+    "common": {
+      "loading": "جارٍ التحميل...",
+      "error": "حدث خطأ ما"
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "platform": {
+    "auth": {
+      "login": {
+        "title": "CareerOS",
+        "subtitle": "Votre système d'exploitation de carrière intelligent",
+        "button": "Continuer avec Google"
+      },
+      "logout": {
+        "button": "Déconnexion"
+      }
+    },
+    "dashboard": {
+      "title": "Tableau de bord",
+      "welcome": "Bienvenue, {{name}}"
+    },
+    "common": {
+      "loading": "Chargement...",
+      "error": "Une erreur est survenue"
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "careeros",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "pnpm --parallel -r build",
+    "dev": "pnpm --parallel -r dev",
+    "lint": "pnpm --parallel -r lint",
+    "typecheck": "pnpm --parallel -r typecheck",
+    "test": "pnpm --parallel -r test",
+    "format": "prettier --write ."
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

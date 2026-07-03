@@ -1,0 +1,22 @@
+{
+  "platform": {
+    "auth": {
+      "login": {
+        "title": "CareerOS",
+        "subtitle": "Your intelligent career operating system",
+        "button": "Continue with Google"
+      },
+      "logout": {
+        "button": "Logout"
+      }
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "welcome": "Welcome, {{name}}"
+    },
+    "common": {
+      "loading": "Loading...",
+      "error": "Something went wrong"
+    }
+  }
+}
