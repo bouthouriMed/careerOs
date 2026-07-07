@@ -3,19 +3,201 @@
     "auth": {
       "login": {
         "title": "CareerOS",
-        "subtitle": "Votre système d'exploitation de carrière intelligent",
-        "button": "Continuer avec Google"
+        "tagline": "Votre carrière, gérée intelligemment.",
+        "description": "CareerOS organise automatiquement vos candidatures depuis Gmail, suit votre progression et fournit des insights IA pour vous aider à prendre de meilleures décisions professionnelles.",
+        "hero": {
+          "headline": "Votre système d'exploitation de carrière",
+          "subhead": "Connectez votre Gmail une fois. CareerOS découvre automatiquement vos candidatures, suit chaque changement de statut et vous donne la clarté nécessaire pour avancer en toute confiance."
+        },
+        "features": {
+          "autoImport": {
+            "title": "Importation automatique",
+            "description": "Connectez votre Gmail et CareerOS découvre automatiquement chaque candidature, vous faisant gagner des heures de saisie manuelle."
+          },
+          "aiInsights": {
+            "title": "Insights par IA",
+            "description": "Comprenez votre taux d'entretien, vos modèles de réponse et votre trajectoire professionnelle avec une intelligence qui évolue avec vous."
+          },
+          "tracking": {
+            "title": "Suivi de progression",
+            "description": "Voyez exactement où en est chaque candidature — de la soumission à l'entretien, l'offre et au-delà."
+          }
+        },
+        "trust": {
+          "secure": "Vos données sont chiffrées",
+          "free": "Gratuit",
+          "gmail": "Connectez votre Gmail"
+        },
+        "howItWorks": {
+          "connect": {
+            "title": "Connectez votre Gmail",
+            "description": "Un clic. Votre compte Gmail existant. Aucun mot de passe stocké."
+          },
+          "sync": {
+            "title": "Nous analysons vos candidatures",
+            "description": "CareerOS identifie les emails liés au recrutement et les organise en candidatures."
+          },
+          "insights": {
+            "title": "Obtenez des insights de carrière",
+            "description": "Suivez votre progression, comprenez les tendances et prenez des décisions de carrière éclairées."
+          }
+        },
+        "cta": {
+          "title": "Prêt à prendre le contrôle de votre carrière ?",
+          "button": "Continuer avec Google"
+        },
+        "footer": {
+          "copyright": "CareerOS. Tous droits réservés."
+        }
+      }
+    },
+    "sync": {
+      "title": "Configuration de votre espace de travail",
+      "description": "CareerOS se connecte à votre Gmail et organise vos informations professionnelles. Cela ne prend qu'un instant.",
+      "stages": {
+        "connecting": "Connexion à Gmail",
+        "connectingDesc": "Établissement d'une connexion sécurisée à votre compte Gmail.",
+        "discovering": "Découverte des candidatures",
+        "discoveringDesc": "Analyse de votre boîte de réception pour les candidatures et emails de recrutement.",
+        "organizing": "Organisation de votre carrière",
+        "organizingDesc": "Structuration de vos candidatures, entreprises et chronologie de carrière.",
+        "preparing": "Préparation de votre espace",
+        "preparingDesc": "Configuration de votre tableau de bord avec des insights IA et recommandations."
       },
-      "logout": {
-        "button": "Déconnexion"
+      "status": {
+        "inProgress": "Import de vos données carrière…",
+        "complete": "Votre espace est prêt",
+        "completeDesc": "Redirection vers votre tableau de bord.",
+        "failed": "Configuration impossible",
+        "retry": "Réessayer"
       }
     },
     "dashboard": {
       "title": "Tableau de bord",
-      "welcome": "Bienvenue, {{name}}"
+      "greeting": {
+        "morning": "Bonjour",
+        "afternoon": "Bon après-midi",
+        "evening": "Bonsoir"
+      },
+      "subtitle": "Faisons avancer votre carrière aujourd'hui.",
+      "search": {
+        "placeholder": "Rechercher candidatures, entreprises..."
+      },
+      "notifications": {
+        "label": "Notifications"
+      },
+      "profile": {
+        "label": "Profil"
+      },
+      "focus": {
+        "label": "Focus IA",
+        "headline": "Relancez Amazon aujourd'hui.",
+        "summary": "Votre candidature progresse. Une relance douce pourrait faire avancer les choses.",
+        "action": "Relancer",
+        "secondary": "Voir la candidature",
+        "welcomeHeadline": "Bienvenue sur CareerOS",
+        "welcomeSummary": "Nous organisons votre carrière et préparons des insights personnalisés.",
+        "welcomeAction": "Explorer les candidatures"
+      },
+      "quickActions": {
+        "addApplication": {
+          "title": "Ajouter une candidature",
+          "description": "Suivre une nouvelle candidature"
+        },
+        "trackInterview": {
+          "title": "Suivre un entretien",
+          "description": "Enregistrer un entretien à venir"
+        },
+        "uploadResume": {
+          "title": "Télécharger un CV",
+          "description": "Mettre à jour votre dernier CV"
+        },
+        "aiCareerReview": {
+          "title": "Analyse IA de carrière",
+          "description": "Obtenir des insights personnalisés"
+        }
+      },
+      "pipeline": {
+        "title": "Pipeline des candidatures",
+        "saved": "Sauvegardé",
+        "applied": "Postulé",
+        "interview": "Entretien",
+        "offer": "Offre",
+        "rejected": "Refusé",
+        "emptyColumn": "Déplacer les candidatures ici",
+        "aiSuggestion": "Suggestion IA"
+      },
+      "interviews": {
+        "title": "Entretiens à venir",
+        "empty": "Aucun entretien à venir",
+        "emptyDesc": "Au fur et à mesure que vos candidatures progressent, les entretiens apparaîtront ici.",
+        "prepare": "Préparer"
+      },
+      "metrics": {
+        "title": "Métriques de carrière",
+        "applications": "Candidatures",
+        "interviews": "Entretiens",
+        "responseRate": "Taux de réponse",
+        "offers": "Offres"
+      },
+      "timeline": {
+        "title": "Activité",
+        "today": "Aujourd'hui",
+        "yesterday": "Hier",
+        "lastWeek": "Semaine dernière",
+        "interviewScheduled": "Entretien planifié",
+        "applicationSubmitted": "Candidature envoyée",
+        "offerReceived": "Offre reçue",
+        "applicationRejected": "Candidature refusée",
+        "followUpReminder": "Rappel de relance",
+        "resumeImproved": "CV amélioré",
+        "interviewScheduledDesc": "{{company}} vous a invité à un entretien technique.",
+        "applicationSubmittedDesc": "Vous avez postulé chez {{company}}.",
+        "offerReceivedDesc": "{{company}} vous a envoyé une offre.",
+        "applicationRejectedDesc": "{{company}} a avancé avec d'autres candidats.",
+        "followUpReminderDesc": "Il est temps de relancer {{company}}.",
+        "resumeImprovedDesc": "Votre CV a été optimisé pour de meilleures correspondances.",
+        "actionPrepareInterview": "Préparer l'entretien",
+        "actionViewApplication": "Voir la candidature",
+        "actionReviewResume": "Réviser le CV",
+        "actionDismiss": "Ignorer",
+        "emptyHeading": "Votre parcours professionnel commence ici.",
+        "emptyDesc": "Connectez Gmail ou ajoutez votre première candidature.",
+        "emptyAction": "Ajouter une candidature"
+      },
+      "aiPanel": {
+        "todaySummary": "Aujourd'hui s'annonce productif. Deux candidatures nécessitent votre attention et un entretien approche.",
+        "insightsTitle": "Insights IA",
+        "recommendationsTitle": "Recommandations",
+        "careerScoreTitle": "Santé de carrière",
+        "careerScoreValue": "82 / 100",
+        "careerScoreDesc": "Bonne dynamique. Améliorez la régularité des relances.",
+        "emptyHeading": "Tout semble sur la bonne voie.",
+        "emptyDesc": "Nous vous informerons lorsque de nouvelles opportunités apparaîtront.",
+        "followUpGoogle": "Relancer Google.",
+        "tailorResumeStripe": "Adapter votre CV pour Stripe.",
+        "prepareStarExamples": "Préparer des exemples STAR.",
+        "reviewInterviewNotes": "Réviser les notes d'entretien.",
+        "insightInterviewPrep": "Préparation d'entretien",
+        "insightInterviewPrepDesc": "Votre entretien Amazon est dans deux jours. Révisez les fondamentaux de conception système et les exemples comportementaux.",
+        "insightActionStartPreparing": "Commencer la préparation"
+      },
+      "sidebar": {
+        "dashboard": "Tableau de bord",
+        "applications": "Candidatures",
+        "interviews": "Entretiens",
+        "documents": "Documents",
+        "analytics": "Analytiques"
+      },
+      "empty": {
+        "heading": "Aucune candidature",
+        "text": "Importez vos candidatures depuis Gmail ou ajoutez-les manuellement pour commencer à suivre votre recherche d'emploi avec des insights IA.",
+        "importAction": "Importer depuis Gmail",
+        "addAction": "Ajouter manuellement"
+      }
     },
     "common": {
-      "loading": "Chargement...",
+      "loading": "Chargement…",
       "error": "Une erreur est survenue"
     }
   }

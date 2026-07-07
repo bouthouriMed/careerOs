@@ -8,24 +8,92 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
-  name      String?
-  avatar    String?
-  googleId  String    @unique
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  sessions  Session[]
+  id                   String    @id @default(cuid())
+  email                String    @unique
+  name                 String?
+  avatar               String?
+  googleId             String    @unique
+  googleAccessToken    String?
+  googleRefreshToken   String?
+  googleTokenExpiry    DateTime?
+  initialSyncCompleted Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  sessions             Session[]
+  applications         Application[]
+  companies            Company[]
+  emailSync            EmailSync[]
+}
+
+model EmailSync {
+  id                  String    @id @default(cuid())
+  userId              String
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status              String    @default("pending")
+  emailsScanned       Int       @default(0)
+  applicationsCreated Int       @default(0)
+  error               String?
+  startedAt           DateTime  @default(now())
+  completedAt         DateTime?
+
+  @@index([userId])
+  @@index([status])
 }
 
 model Session {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
   refreshedAt DateTime?
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+model Company {
+  id        String   @id @default(cuid())
+  name      String
+  domain    String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  jobs      Job[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model Job {
+  id           String        @id @default(cuid())
+  title        String
+  companyId    String
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  userId       String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  applications Application[]
+
+  @@index([userId])
+  @@index([companyId])
+}
+
+model Application {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId     String?
+  job       Job?     @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  status    String   @default("Draft")
+  source    String   @default("manual")
+  notes     String?
+  appliedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([userId, status])
 }

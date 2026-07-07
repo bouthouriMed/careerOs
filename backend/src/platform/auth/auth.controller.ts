@@ -1,10 +1,12 @@
 import { Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Request, Response } from 'express';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OAuthService } from './oauth.service';
 import { SessionService } from './session.service';
 import { AuthGuard } from './auth.guard';
 import { CurrentUser } from './current-user.decorator';
+import { EmailProviderConnectedEvent } from '../../email-sync/events/email-provider-connected.event';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -12,6 +14,7 @@ export class AuthController {
   constructor(
     private readonly oauthService: OAuthService,
     private readonly sessionService: SessionService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   @Get('google/url')
@@ -38,6 +41,11 @@ export class AuthController {
       sameSite: 'lax',
       maxAge: 72 * 60 * 60 * 1000,
     });
+
+    this.eventEmitter.emit(
+      'email-provider.connected',
+      new EmailProviderConnectedEvent(user.id),
+    );
 
     res.redirect(process.env.FRONTEND_URL || 'http://localhost:3000/dashboard');
   }

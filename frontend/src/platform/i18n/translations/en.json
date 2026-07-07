@@ -3,19 +3,201 @@
     "auth": {
       "login": {
         "title": "CareerOS",
-        "subtitle": "Your intelligent career operating system",
-        "button": "Continue with Google"
+        "tagline": "Your career, intelligently managed.",
+        "description": "CareerOS automatically organizes your job applications from Gmail, tracks your progress, and provides AI-powered insights to help you make better career decisions.",
+        "hero": {
+          "headline": "Your Career Operating System",
+          "subhead": "Connect your Gmail once. CareerOS automatically discovers your job applications, tracks every status change, and gives you the clarity to move forward with confidence."
+        },
+        "features": {
+          "autoImport": {
+            "title": "Automatic Import",
+            "description": "Connect your Gmail and CareerOS automatically discovers every job application, saving you hours of manual data entry."
+          },
+          "aiInsights": {
+            "title": "AI-Powered Insights",
+            "description": "Understand your interview rate, response patterns, and career trajectory with intelligence that grows with you."
+          },
+          "tracking": {
+            "title": "Progress Tracking",
+            "description": "See exactly where each application stands — from submission through interview, offer, and beyond."
+          }
+        },
+        "trust": {
+          "secure": "Your data is encrypted",
+          "free": "Free to use",
+          "gmail": "Connect your Gmail"
+        },
+        "howItWorks": {
+          "connect": {
+            "title": "Connect your Gmail",
+            "description": "One click. Your existing Gmail account. No passwords stored."
+          },
+          "sync": {
+            "title": "We analyze your applications",
+            "description": "CareerOS identifies hiring-related emails and organizes them into applications."
+          },
+          "insights": {
+            "title": "Get career intelligence",
+            "description": "Track progress, understand patterns, and make confident career decisions."
+          }
+        },
+        "cta": {
+          "title": "Ready to take control of your career?",
+          "button": "Continue with Google"
+        },
+        "footer": {
+          "copyright": "CareerOS. All rights reserved."
+        }
+      }
+    },
+    "sync": {
+      "title": "Setting up your workspace",
+      "description": "CareerOS is connecting to your Gmail and organizing your career information. This takes just a moment.",
+      "stages": {
+        "connecting": "Connecting Gmail",
+        "connectingDesc": "Establishing a secure connection to your Gmail account.",
+        "discovering": "Discovering applications",
+        "discoveringDesc": "Scanning your inbox for job applications and hiring-related emails.",
+        "organizing": "Organizing your career",
+        "organizingDesc": "Structuring your applications, companies, and career timeline.",
+        "preparing": "Preparing your workspace",
+        "preparingDesc": "Setting up your dashboard with AI-powered insights and recommendations."
       },
-      "logout": {
-        "button": "Logout"
+      "status": {
+        "inProgress": "Importing your career data…",
+        "complete": "Your workspace is ready",
+        "completeDesc": "Redirecting you to your dashboard.",
+        "failed": "Unable to complete setup",
+        "retry": "Try again"
       }
     },
     "dashboard": {
       "title": "Dashboard",
-      "welcome": "Welcome, {{name}}"
+      "greeting": {
+        "morning": "Good morning",
+        "afternoon": "Good afternoon",
+        "evening": "Good evening"
+      },
+      "subtitle": "Let's move your career forward today.",
+      "search": {
+        "placeholder": "Search applications, companies..."
+      },
+      "notifications": {
+        "label": "Notifications"
+      },
+      "profile": {
+        "label": "Profile"
+      },
+      "focus": {
+        "label": "AI Focus",
+        "headline": "Follow up with Amazon today.",
+        "summary": "Your application is progressing. A gentle follow-up could move things forward.",
+        "action": "Follow up",
+        "secondary": "View application",
+        "welcomeHeadline": "Welcome to CareerOS",
+        "welcomeSummary": "We're organizing your career and preparing personalized insights.",
+        "welcomeAction": "Explore Applications"
+      },
+      "quickActions": {
+        "addApplication": {
+          "title": "Add Application",
+          "description": "Track a new job application"
+        },
+        "trackInterview": {
+          "title": "Track Interview",
+          "description": "Log an upcoming interview"
+        },
+        "uploadResume": {
+          "title": "Upload Resume",
+          "description": "Update your latest resume"
+        },
+        "aiCareerReview": {
+          "title": "AI Career Review",
+          "description": "Get personalized insights"
+        }
+      },
+      "pipeline": {
+        "title": "Application Pipeline",
+        "saved": "Saved",
+        "applied": "Applied",
+        "interview": "Interview",
+        "offer": "Offer",
+        "rejected": "Rejected",
+        "emptyColumn": "Move applications here",
+        "aiSuggestion": "AI Suggestion"
+      },
+      "interviews": {
+        "title": "Upcoming Interviews",
+        "empty": "No upcoming interviews",
+        "emptyDesc": "As your applications progress, interviews will appear here.",
+        "prepare": "Prepare"
+      },
+      "metrics": {
+        "title": "Career Metrics",
+        "applications": "Applications",
+        "interviews": "Interviews",
+        "responseRate": "Response Rate",
+        "offers": "Offers"
+      },
+      "timeline": {
+        "title": "Activity",
+        "today": "Today",
+        "yesterday": "Yesterday",
+        "lastWeek": "Last Week",
+        "interviewScheduled": "Interview Scheduled",
+        "applicationSubmitted": "Application Submitted",
+        "offerReceived": "Offer Received",
+        "applicationRejected": "Application Rejected",
+        "followUpReminder": "Follow-up Reminder",
+        "resumeImproved": "Resume Improved",
+        "interviewScheduledDesc": "{{company}} invited you to a technical interview.",
+        "applicationSubmittedDesc": "You applied to {{company}}.",
+        "offerReceivedDesc": "{{company}} sent you an offer.",
+        "applicationRejectedDesc": "{{company}} has moved forward with other candidates.",
+        "followUpReminderDesc": "Time to follow up with {{company}}.",
+        "resumeImprovedDesc": "Your resume was optimized for better matches.",
+        "actionPrepareInterview": "Prepare Interview",
+        "actionViewApplication": "View Application",
+        "actionReviewResume": "Review Resume",
+        "actionDismiss": "Dismiss",
+        "emptyHeading": "Your career journey starts here.",
+        "emptyDesc": "Connect Gmail or add your first application.",
+        "emptyAction": "Add Application"
+      },
+      "aiPanel": {
+        "todaySummary": "Today looks productive. Two applications need attention and one interview is approaching.",
+        "insightsTitle": "AI Insights",
+        "recommendationsTitle": "Recommendations",
+        "careerScoreTitle": "Career Health",
+        "careerScoreValue": "82 / 100",
+        "careerScoreDesc": "Strong momentum. Improve follow-up consistency.",
+        "emptyHeading": "Everything looks on track.",
+        "emptyDesc": "We'll notify you when new opportunities appear.",
+        "followUpGoogle": "Follow up with Google.",
+        "tailorResumeStripe": "Tailor your resume for Stripe.",
+        "prepareStarExamples": "Prepare STAR examples.",
+        "reviewInterviewNotes": "Review interview notes.",
+        "insightInterviewPrep": "Interview Preparation",
+        "insightInterviewPrepDesc": "Your Amazon interview is in two days. Review system design fundamentals and behavioral examples.",
+        "insightActionStartPreparing": "Start Preparing"
+      },
+      "sidebar": {
+        "dashboard": "Dashboard",
+        "applications": "Applications",
+        "interviews": "Interviews",
+        "documents": "Documents",
+        "analytics": "Analytics"
+      },
+      "empty": {
+        "heading": "No applications yet",
+        "text": "Import your job applications from Gmail or add them manually to start tracking your job search with AI-powered insights.",
+        "importAction": "Import your Gmail",
+        "addAction": "Add manually"
+      }
     },
     "common": {
-      "loading": "Loading...",
+      "loading": "Loading…",
       "error": "Something went wrong"
     }
   }

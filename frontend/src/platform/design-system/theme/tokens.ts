@@ -12,9 +12,25 @@ export const tokens = {
     background: '#FFFFFF',
     surface: '#F8FAFC',
     border: '#E2E8F0',
+    charcoal: '#1A1A1A',
     text: '#0F172A',
     textSecondary: '#64748B',
     textInverse: '#FFFFFF',
+
+    bg: '#0D1117',
+    sidebar: '#090C14',
+    card: '#141925',
+    card2: '#1C2333',
+    borderDark: 'rgba(255,255,255,0.07)',
+    borderDark2: 'rgba(255,255,255,0.05)',
+    textDark: '#E8EBF4',
+    muted: '#A8B3CF',
+    dim: '#6B7A9E',
+    blue: '#4F8EF7',
+    purple: '#A78BFA',
+    green: '#34D399',
+    amber: '#F59E0B',
+    red: '#F87171',
   },
   spacing: {
     xs: '4px',
@@ -25,7 +41,8 @@ export const tokens = {
     xxl: '48px',
   },
   typography: {
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontFamily: '"Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontMono: '"JetBrains Mono", monospace',
     sizes: {
       xs: '12px',
       sm: '14px',
@@ -45,6 +62,8 @@ export const tokens = {
     sm: '4px',
     md: '8px',
     lg: '12px',
+    xl: '24px',
+    xxl: '28px',
     full: '9999px',
   },
   shadows: {
@@ -57,5 +76,6 @@ export const tokens = {
     md: '768px',
     lg: '1024px',
     xl: '1280px',
+    xxl: '1600px',
   },
 } as const;

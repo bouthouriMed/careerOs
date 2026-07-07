@@ -3,19 +3,201 @@
     "auth": {
       "login": {
         "title": "CareerOS",
-        "subtitle": "نظام التشغيل الذكي لمهنتك",
-        "button": "المتابعة مع Google"
+        "tagline": "مسيرتك المهنية، تُدار بذكاء.",
+        "description": "ينظم CareerOS تلقائياً طلبات التوظيف الخاصة بك من Gmail، ويتتبع تقدمك، ويوفر رؤى مدعومة بالذكاء الاصطناعي لمساعدتك في اتخاذ قرارات مهنية أفضل.",
+        "hero": {
+          "headline": "نظام التشغيل المهني الخاص بك",
+          "subhead": "قم بتوصيل Gmail مرة واحدة. يكتشف CareerOS تلقائياً طلبات التوظيف الخاصة بك، ويتتبع كل تغيير في الحالة، ويمنحك الوضوح للمضي قدماً بثقة."
+        },
+        "features": {
+          "autoImport": {
+            "title": "استيراد تلقائي",
+            "description": "قم بتوصيل Gmail الخاص بك وسيكتشف CareerOS تلقائياً كل طلب توظيف، مما يوفر لك ساعات من إدخال البيانات اليدوي."
+          },
+          "aiInsights": {
+            "title": "رؤى بالذكاء الاصطناعي",
+            "description": "افهم نسبة المقابلات الخاصة بك وأنماط الاستجابة والمسار المهني بذكاء ينمو معك."
+          },
+          "tracking": {
+            "title": "تتبع التقدم",
+            "description": "انظر بالضبط أين يقف كل طلب — من التقديم إلى المقابلة والعرض وما بعده."
+          }
+        },
+        "trust": {
+          "secure": "بياناتك مشفرة",
+          "free": "مجاني",
+          "gmail": "قم بتوصيل Gmail"
+        },
+        "howItWorks": {
+          "connect": {
+            "title": "قم بتوصيل Gmail",
+            "description": "نقرة واحدة. حساب Gmail الحالي. لا يتم تخزين كلمات المرور."
+          },
+          "sync": {
+            "title": "نحلل طلباتك",
+            "description": "يحدد CareerOS رسائل البريد الإلكتروني المتعلقة بالتوظيف وينظمها في طلبات توظيف."
+          },
+          "insights": {
+            "title": "احصل على ذكاء مهني",
+            "description": "تتبع التقدم، وافهم الأنماط، واتخذ قرارات مهنية واثقة."
+          }
+        },
+        "cta": {
+          "title": "هل أنت مستعد للتحكم بمسيرتك المهنية؟",
+          "button": "المتابعة مع Google"
+        },
+        "footer": {
+          "copyright": "CareerOS. جميع الحقوق محفوظة."
+        }
+      }
+    },
+    "sync": {
+      "title": "إعداد مساحة العمل الخاصة بك",
+      "description": "يتصل CareerOS بـ Gmail الخاص بك وينظم معلوماتك المهنية. سيستغرق هذا لحظة فقط.",
+      "stages": {
+        "connecting": "جارٍ الاتصال بـ Gmail",
+        "connectingDesc": "إنشاء اتصال آمن بحساب Gmail الخاص بك.",
+        "discovering": "جارٍ اكتشاف الطلبات",
+        "discoveringDesc": "فحص صندوق الوارد الخاص بك بحثاً عن طلبات التوظيف ورسائل البريد الإلكتروني المتعلقة بالتوظيف.",
+        "organizing": "جارٍ تنظيم مسيرتك المهنية",
+        "organizingDesc": "هيكلة طلبات التوظيف والشركات والجدول الزمني المهني.",
+        "preparing": "جارٍ تحضير مساحة العمل",
+        "preparingDesc": "إعداد لوحة التحكم الخاصة بك مع رؤى وتوصيات الذكاء الاصطناعي."
       },
-      "logout": {
-        "button": "تسجيل الخروج"
+      "status": {
+        "inProgress": "جارٍ استيراد بياناتك المهنية…",
+        "complete": "مساحة العمل جاهزة",
+        "completeDesc": "جارٍ إعادة التوجيه إلى لوحة التحكم.",
+        "failed": "تعذر إكمال الإعداد",
+        "retry": "حاول مرة أخرى"
       }
     },
     "dashboard": {
       "title": "لوحة التحكم",
-      "welcome": "مرحباً، {{name}}"
+      "greeting": {
+        "morning": "صباح الخير",
+        "afternoon": "مساء الخير",
+        "evening": "مساء الخير"
+      },
+      "subtitle": "دعنا نقدم مسيرتك المهنية إلى الأمام اليوم.",
+      "search": {
+        "placeholder": "البحث عن الطلبات والشركات..."
+      },
+      "notifications": {
+        "label": "الإشعارات"
+      },
+      "profile": {
+        "label": "الملف الشخصي"
+      },
+      "focus": {
+        "label": "تركيز الذكاء الاصطناعي",
+        "headline": "تابع مع Amazon اليوم.",
+        "summary": "طلبك قيد التقدم. متابعة لطيفة قد تدفع الأمور إلى الأمام.",
+        "action": "متابعة",
+        "secondary": "عرض الطلب",
+        "welcomeHeadline": "مرحباً بك في CareerOS",
+        "welcomeSummary": "نقوم بتنظيم مسيرتك المهنية وإعداد رؤى مخصصة.",
+        "welcomeAction": "استكشاف الطلبات"
+      },
+      "quickActions": {
+        "addApplication": {
+          "title": "إضافة طلب",
+          "description": "تتبع طلب توظيف جديد"
+        },
+        "trackInterview": {
+          "title": "تتبع مقابلة",
+          "description": "تسجيل مقابلة قادمة"
+        },
+        "uploadResume": {
+          "title": "رفع السيرة الذاتية",
+          "description": "تحديث آخر سيرة ذاتية"
+        },
+        "aiCareerReview": {
+          "title": "مراجعة المهنة بالذكاء الاصطناعي",
+          "description": "احصل على رؤى مخصصة"
+        }
+      },
+      "pipeline": {
+        "title": "خط أنابيب الطلبات",
+        "saved": "محفوظ",
+        "applied": "تم التقديم",
+        "interview": "مقابلة",
+        "offer": "عرض",
+        "rejected": "مرفوض",
+        "emptyColumn": "انقل الطلبات إلى هنا",
+        "aiSuggestion": "اقتراح الذكاء الاصطناعي"
+      },
+      "interviews": {
+        "title": "المقابلات القادمة",
+        "empty": "لا توجد مقابلات قادمة",
+        "emptyDesc": "مع تقدم طلباتك، ستظهر المقابلات هنا.",
+        "prepare": "تحضير"
+      },
+      "metrics": {
+        "title": "مقاييس المهنة",
+        "applications": "الطلبات",
+        "interviews": "المقابلات",
+        "responseRate": "نسبة الاستجابة",
+        "offers": "العروض"
+      },
+      "timeline": {
+        "title": "النشاط",
+        "today": "اليوم",
+        "yesterday": "الأمس",
+        "lastWeek": "الأسبوع الماضي",
+        "interviewScheduled": "مقابلة مجدولة",
+        "applicationSubmitted": "تم تقديم الطلب",
+        "offerReceived": "تم استلام العرض",
+        "applicationRejected": "تم رفض الطلب",
+        "followUpReminder": "تذكير بالمتابعة",
+        "resumeImproved": "تم تحسين السيرة الذاتية",
+        "interviewScheduledDesc": "{{company}} دعتك لمقابلة فنية.",
+        "applicationSubmittedDesc": "لقد تقدمت إلى {{company}}.",
+        "offerReceivedDesc": "{{company}} أرسلت لك عرضاً.",
+        "applicationRejectedDesc": "{{company}} تقدمت مع مرشحين آخرين.",
+        "followUpReminderDesc": "حان وقت متابعة {{company}}.",
+        "resumeImprovedDesc": "تم تحسين سيرتك الذاتية للحصول على نتائج أفضل.",
+        "actionPrepareInterview": "تحضير المقابلة",
+        "actionViewApplication": "عرض الطلب",
+        "actionReviewResume": "مراجعة السيرة الذاتية",
+        "actionDismiss": "تجاهل",
+        "emptyHeading": "رحلتك المهنية تبدأ هنا.",
+        "emptyDesc": "قم بتوصيل Gmail أو أضف طلبك الأول.",
+        "emptyAction": "إضافة طلب"
+      },
+      "aiPanel": {
+        "todaySummary": "اليوم يبدو منتجاً. طلبان يحتاجان إلى انتباهك ومقابلة واحدة تقترب.",
+        "insightsTitle": "رؤى الذكاء الاصطناعي",
+        "recommendationsTitle": "التوصيات",
+        "careerScoreTitle": "صحة المهنة",
+        "careerScoreValue": "82 / 100",
+        "careerScoreDesc": "زخم قوي. حسّن انتظام المتابعة.",
+        "emptyHeading": "كل شيء يبدو على المسار الصحيح.",
+        "emptyDesc": "سنخطرك عند ظهور فرص جديدة.",
+        "followUpGoogle": "تابع مع Google.",
+        "tailorResumeStripe": "خصص سيرتك الذاتية لـ Stripe.",
+        "prepareStarExamples": "جهز أمثلة STAR.",
+        "reviewInterviewNotes": "راجع ملاحظات المقابلة.",
+        "insightInterviewPrep": "تحضير المقابلة",
+        "insightInterviewPrepDesc": "مقابلتك في Amazon بعد يومين. راجع أساسيات تصميم الأنظمة والأمثلة السلوكية.",
+        "insightActionStartPreparing": "ابدأ التحضير"
+      },
+      "sidebar": {
+        "dashboard": "لوحة التحكم",
+        "applications": "الطلبات",
+        "interviews": "المقابلات",
+        "documents": "المستندات",
+        "analytics": "التحليلات"
+      },
+      "empty": {
+        "heading": "لا توجد طلبات بعد",
+        "text": "قم باستيراد طلبات التوظيف من Gmail أو أضفها يدوياً لبدء تتبع بحثك عن وظيفة برؤى الذكاء الاصطناعي.",
+        "importAction": "استيراد من Gmail",
+        "addAction": "إضافة يدوياً"
+      }
     },
     "common": {
-      "loading": "جارٍ التحميل...",
+      "loading": "جارٍ التحميل…",
       "error": "حدث خطأ ما"
     }
   }

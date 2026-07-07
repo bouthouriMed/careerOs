@@ -1,4 +1,4 @@
-export function validateEnvironment() {
+export function validateEnvironment(config: Record<string, unknown>) {
   const required = [
     'DATABASE_URL',
     'GOOGLE_CLIENT_ID',
@@ -8,11 +8,13 @@ export function validateEnvironment() {
     'ENCRYPTION_KEY',
   ];
 
-  const missing = required.filter((key) => !process.env[key]);
+  const missing = required.filter((key) => !config[key]);
 
   if (missing.length > 0) {
     throw new Error(
       `Missing required environment variables: ${missing.join(', ')}`,
     );
   }
+
+  return config;
 }

@@ -1,3 +1,11 @@
 export { Button } from './Button';
 export { Input } from './Input';
 export { Card } from './Card';
+export { Badge } from './Badge/Badge';
+export { ProgressBar } from './ProgressBar';
+export { Timeline } from './Timeline/Timeline';
+export { TimelineItem } from './Timeline/TimelineItem';
+export { Avatar } from './Avatar/Avatar';
+export { Skeleton } from './Skeleton/Skeleton';
+export { SearchInput } from './SearchInput/SearchInput';
+export { Chip } from './Chip/Chip';
