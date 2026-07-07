@@ -11,4 +11,5 @@ build/
 out/
 *.tsbuildinfo
 docs/
+.opencode/
 node_modules
