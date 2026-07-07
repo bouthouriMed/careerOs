@@ -16,7 +16,13 @@ export default function RootLayout({
 
   return (
     <html lang={i18n.language} dir={dir}>
-      <body>
+      <head>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body style={{ margin: 0 }}>
         <Provider store={store}>
           <ThemeProvider theme={lightTheme}>
             <I18nextProvider i18n={i18n}>
