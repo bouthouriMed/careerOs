@@ -93,48 +93,26 @@ const ViewAll = styled.a`
   gap: 4px;
 `;
 
-const events = [
-  {
-    icon: 'check',
-    iconColor: '#34D399',
-    type: 'Interview Scheduled',
-    chip: 'Figma',
-    role: 'Staff PM',
-    time: '2h ago',
-  },
-  {
-    icon: 'check',
-    iconColor: '#34D399',
-    type: 'Application Sent',
-    chip: 'Anthropic',
-    role: 'PM Lead',
-    time: '5h ago',
-  },
-  {
-    icon: 'circle',
-    iconColor: '#F59E0B',
-    type: 'Follow-up Reminder',
-    chip: 'Vercel',
-    role: 'Eng Manager',
-    time: 'Yesterday',
-  },
-  {
-    icon: 'star',
-    iconColor: '#4F8EF7',
-    type: 'Offer Received',
-    chip: 'Anthropic',
-    role: 'PM Lead',
-    time: 'Yesterday',
-  },
-  {
-    icon: 'check',
-    iconColor: '#34D399',
-    type: 'Resume Tailored',
-    chip: 'Linear',
-    role: 'Product Lead',
-    time: '2d ago',
-  },
-];
+function getStatusIcon(status: string): { icon: 'check' | 'circle' | 'star'; color: string; label: string } {
+  const s = status.toLowerCase();
+  if (s === 'offer') return { icon: 'star', color: '#4F8EF7', label: 'Offer Received' };
+  if (s === 'interview') return { icon: 'check', color: '#A78BFA', label: 'Interview' };
+  if (s === 'applied') return { icon: 'check', color: '#34D399', label: 'Application Sent' };
+  if (s === 'saved') return { icon: 'circle', color: '#F59E0B', label: 'Saved' };
+  if (s === 'rejected') return { icon: 'circle', color: '#F87171', label: 'Rejected' };
+  return { icon: 'circle', color: '#6B7A9E', label: status };
+}
+
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const days = Math.floor(diff / 86400000);
+  if (days === 0) return 'Today';
+  if (days === 1) return '1d ago';
+  if (days < 7) return `${days}d ago`;
+  const weeks = Math.floor(days / 7);
+  if (weeks === 1) return '1w ago';
+  return `${weeks}w ago`;
+}
 
 function CheckIcon({ color }: { color: string }) {
   return (
@@ -166,12 +144,21 @@ const iconMap: Record<string, typeof CheckIcon> = {
   star: StarIcon,
 };
 
-interface CareerTimelineProps {
-  isEmpty?: boolean;
+interface Application {
+  id: string;
+  status: string;
+  companyName?: string;
+  jobTitle?: string;
+  createdAt: string;
 }
 
-export function CareerTimeline({ isEmpty }: CareerTimelineProps) {
-  if (isEmpty) {
+interface CareerTimelineProps {
+  isEmpty?: boolean;
+  applications?: Application[];
+}
+
+export function CareerTimeline({ isEmpty, applications = [] }: CareerTimelineProps) {
+  if (isEmpty || applications.length === 0) {
     return (
       <div>
         <SectionHead>
@@ -183,6 +170,8 @@ export function CareerTimeline({ isEmpty }: CareerTimelineProps) {
       </div>
     );
   }
+
+  const sorted = [...applications].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   return (
     <div>
@@ -196,19 +185,20 @@ export function CareerTimeline({ isEmpty }: CareerTimelineProps) {
         </ViewAll>
       </SectionHead>
       <TimelineCard>
-        {events.map((evt) => {
-          const Icon = iconMap[evt.icon];
+        {sorted.slice(0, 10).map((app) => {
+          const { icon, color, label } = getStatusIcon(app.status);
+          const Icon = iconMap[icon];
           return (
-            <Row key={`${evt.type}-${evt.chip}`}>
-              <IconWrap><Icon color={evt.iconColor} /></IconWrap>
+            <Row key={app.id}>
+              <IconWrap><Icon color={color} /></IconWrap>
               <Body>
                 <Top>
-                  <Type>{evt.type}</Type>
-                  <Chip>{evt.chip}</Chip>
+                  <Type>{label}</Type>
+                  <Chip>{app.companyName || 'Unknown'}</Chip>
                 </Top>
-                <RoleLine>{evt.role}</RoleLine>
+                <RoleLine>{app.jobTitle || 'Application'}</RoleLine>
               </Body>
-              <Time>{evt.time}</Time>
+              <Time>{timeAgo(app.createdAt)}</Time>
             </Row>
           );
         })}

@@ -3,6 +3,7 @@
 import styled from 'styled-components';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/platform/auth/hooks/use-auth';
 
 const scrollbarStyles = `
   &::-webkit-scrollbar { width: 4px; }
@@ -215,6 +216,9 @@ const iconMap: Record<string, typeof GridIcon> = {
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const name = user?.name || 'User';
+  const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'U';
 
   return (
     <Aside>
@@ -249,10 +253,10 @@ export function Sidebar() {
       </Nav>
 
       <UserCard>
-        <UserAvatar>AJ</UserAvatar>
+        <UserAvatar>{initials}</UserAvatar>
         <UserInfo>
-          <UserName>Alex Johnson</UserName>
-          <UserRole>Product Manager</UserRole>
+          <UserName>{name}</UserName>
+          <UserRole>Job Seeker</UserRole>
         </UserInfo>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6B7A9E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="3" /><path d="M19.07 4.93l-1.41 1.41M5.34 18.66l-1.41 1.41M19.07 19.07l-1.41-1.41M5.34 5.34L3.93 3.93M22 12h-2M4 12H2M19.07 4.93A10 10 0 014.93 19.07M19.07 19.07A10 10 0 014.93 4.93" />

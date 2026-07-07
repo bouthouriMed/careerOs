@@ -131,7 +131,10 @@ function formatDate() {
 
 export function TopBar() {
   const { user } = useAuth();
-  const name = user?.name?.split(' ')[0] || 'Alex';
+  const name = user?.name?.split(' ')[0] || 'there';
+  const initials = user?.name
+    ? user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+    : 'U';
 
   return (
     <StyledHeader>
@@ -155,7 +158,7 @@ export function TopBar() {
           </svg>
           <NotifDot />
         </IconBtn>
-        <Avatar>AJ</Avatar>
+        <Avatar>{initials}</Avatar>
       </Actions>
     </StyledHeader>
   );
