@@ -1,6 +1,7 @@
 'use client';
 
 import styled from 'styled-components';
+import { useAuth } from '@/platform/auth/hooks/use-auth';
 
 const Wrapper = styled.div`
   border-radius: 24px;
@@ -140,6 +141,9 @@ interface HeroFocusProps {
 }
 
 export function HeroFocus({ isEmpty }: HeroFocusProps) {
+  const { user } = useAuth();
+  const firstName = user?.name?.split(' ')[0] || 'there';
+
   return (
     <Wrapper>
       <Sheen />
@@ -160,7 +164,7 @@ export function HeroFocus({ isEmpty }: HeroFocusProps) {
           </>
         ) : (
           <>
-            <Title>Strong momentum this week, Alex.</Title>
+            <Title>Strong momentum this week, {firstName}.</Title>
             <Summary>You have a Figma interview tomorrow and 3 applications awaiting response. Your career score rose 4 points — you are in the top 15% of active candidates.</Summary>
             <Actions>
               <BtnGhost href="#">

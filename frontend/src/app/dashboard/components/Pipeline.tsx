@@ -129,57 +129,77 @@ const columns = [
   { key: 'rejected', label: 'Rejected', color: '#F87171', bg: 'rgba(248,113,113,0.15)' },
 ];
 
-const sampleCards: Record<string, Array<{ letter: string; company: string; role: string; time: string; isNew?: boolean }>> = {
-  saved: [
-    { letter: 'S', company: 'Stripe', role: 'Senior PM', time: '2d ago' },
-    { letter: 'L', company: 'Linear', role: 'Product Lead', time: '5d ago' },
-  ],
-  applied: [
-    { letter: 'V', company: 'Vercel', role: 'Eng Manager', time: '3d ago' },
-    { letter: 'N', company: 'Notion', role: 'PM II', time: '7d ago' },
-  ],
-  interview: [
-    { letter: 'F', company: 'Figma', role: 'Staff PM', time: '1d ago' },
-    { letter: 'A', company: 'Arc', role: 'Product', time: '4d ago' },
-  ],
-  offer: [
-    { letter: 'A', company: 'Anthropic', role: 'PM Lead', time: 'New', isNew: true },
-  ],
-  rejected: [
-    { letter: 'O', company: 'OpenAI', role: 'Director PM', time: '6d ago' },
-  ],
-};
+interface Application {
+  id: string;
+  status: string;
+  companyName?: string;
+  jobTitle?: string;
+  createdAt: string;
+}
 
-export function Pipeline() {
+interface PipelineProps {
+  applications?: Application[];
+}
+
+function getInitials(name: string): string {
+  return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+}
+
+function getStatusGroup(status: string): string {
+  const s = status.toLowerCase();
+  if (s === 'saved') return 'saved';
+  if (s === 'applied') return 'applied';
+  if (s === 'interview') return 'interview';
+  if (s === 'offer') return 'offer';
+  if (s === 'rejected') return 'rejected';
+  return 'applied';
+}
+
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const days = Math.floor(diff / 86400000);
+  if (days === 0) return 'Today';
+  if (days === 1) return '1d ago';
+  if (days < 7) return `${days}d ago`;
+  const weeks = Math.floor(days / 7);
+  if (weeks === 1) return '1w ago';
+  return `${weeks}w ago`;
+}
+
+export function Pipeline({ applications = [] }: PipelineProps) {
+  const grouped = columns.map(col => ({
+    ...col,
+    apps: applications.filter(a => getStatusGroup(a.status) === col.key),
+  }));
+
   return (
     <Grid>
-      {columns.map((col) => {
-        const cards = sampleCards[col.key] || [];
+      {grouped.map((col) => {
+        const cards = col.apps;
         return (
           <Column key={col.key}>
             <ColHead>
               <ColLabel $color={col.color}>{col.label}</ColLabel>
               <ColCount $bg={col.bg} $color={col.color}>{cards.length}</ColCount>
             </ColHead>
-            {cards.map((card) => (
-              <Card key={card.company}>
-                <CardTop>
-                  <Logo $bg={col.bg} $color={col.color}>{card.letter}</Logo>
-                  <Company>{card.company}</Company>
-                </CardTop>
-                <Role>{card.role}</Role>
-                <Meta>
-                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#6B7A9E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-                  </svg>
-                  {card.isNew ? (
-                    <span style={{ color: '#34D399', fontSize: 10, fontWeight: 600 }}>New</span>
-                  ) : (
-                    <span>{card.time}</span>
-                  )}
-                </Meta>
-              </Card>
-            ))}
+            {cards.map((app) => {
+              const companyName = app.companyName || 'Unknown';
+              return (
+                <Card key={app.id}>
+                  <CardTop>
+                    <Logo $bg={col.bg} $color={col.color}>{getInitials(companyName)}</Logo>
+                    <Company>{companyName}</Company>
+                  </CardTop>
+                  <Role>{app.jobTitle || 'Application'}</Role>
+                  <Meta>
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#6B7A9E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    <span>{timeAgo(app.createdAt)}</span>
+                  </Meta>
+                </Card>
+              );
+            })}
             <AddBtn>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />

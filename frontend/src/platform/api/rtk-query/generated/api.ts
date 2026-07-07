@@ -1,5 +1,5 @@
 import { baseApi as api } from '../base-api';
-export const addTagTypes = ['Authentication', 'Health'] as const;
+export const addTagTypes = ['Authentication', 'Health', 'EmailSync', 'Applications'] as const;
 const injectedRtkApi = api
   .enhanceEndpoints({
     addTagTypes,
@@ -41,6 +41,20 @@ const injectedRtkApi = api
         query: () => ({ url: `/health` }),
         providesTags: ['Health'],
       }),
+      emailSyncControllerGetStatus: build.query<
+        EmailSyncControllerGetStatusApiResponse,
+        EmailSyncControllerGetStatusApiArg
+      >({
+        query: () => ({ url: `/email-sync/status` }),
+        providesTags: ['EmailSync'],
+      }),
+      applicationControllerGetTimeline: build.query<
+        ApplicationControllerGetTimelineApiResponse,
+        ApplicationControllerGetTimelineApiArg
+      >({
+        query: () => ({ url: `/applications/timeline` }),
+        providesTags: ['Applications'],
+      }),
     }),
     overrideExisting: false,
   });
@@ -55,10 +69,27 @@ export type AuthControllerGetCurrentUserApiResponse = unknown;
 export type AuthControllerGetCurrentUserApiArg = void;
 export type HealthControllerCheckApiResponse = unknown;
 export type HealthControllerCheckApiArg = void;
+export type EmailSyncControllerGetStatusApiResponse = { status: 'never_synced' | 'pending' | 'completed' | 'error' };
+export type EmailSyncControllerGetStatusApiArg = void;
+export type ApplicationControllerGetTimelineApiResponse = {
+  timeline: Array<{
+    date: string;
+    applications: Array<{
+      id: string;
+      status: string;
+      companyName?: string;
+      jobTitle?: string;
+      createdAt: string;
+    }>;
+  }>;
+};
+export type ApplicationControllerGetTimelineApiArg = void;
 export const {
   useAuthControllerGetGoogleAuthUrlQuery,
   useAuthControllerHandleGoogleCallbackQuery,
   useAuthControllerLogoutMutation,
   useAuthControllerGetCurrentUserQuery,
   useHealthControllerCheckQuery,
+  useEmailSyncControllerGetStatusQuery,
+  useApplicationControllerGetTimelineQuery,
 } = injectedRtkApi;

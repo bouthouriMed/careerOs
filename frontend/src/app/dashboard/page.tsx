@@ -23,19 +23,20 @@ const Section = styled.section`
 
 function DashboardContent() {
   const router = useRouter();
-  useAuth();
-  const { data: syncStatus } = useEmailSyncControllerGetStatusQuery(undefined, {
-    pollingInterval: 3000,
+  const { user } = useAuth();
+  const { data: syncStatus, isLoading: syncLoading, isError: syncError } = useEmailSyncControllerGetStatusQuery(undefined, {
+    pollingInterval: 30000,
+    skip: !user,
   });
-  const { data: timelineData } = useApplicationControllerGetTimelineQuery(undefined, {
-    skip: syncStatus?.status !== 'completed',
+  const { data: timelineData, isLoading: timelineLoading } = useApplicationControllerGetTimelineQuery(undefined, {
+    skip: !user || syncStatus?.status !== 'completed',
   });
 
   useEffect(() => {
-    if (syncStatus?.status === 'never_synced' || syncStatus?.status === 'pending') {
+    if (!syncLoading && !syncError && syncStatus?.status === 'never_synced') {
       router.replace('/sync');
     }
-  }, [syncStatus, router]);
+  }, [syncStatus, syncLoading, syncError, router]);
 
   const timeline = useMemo(
     () =>
@@ -49,7 +50,8 @@ function DashboardContent() {
     [timeline],
   );
 
-  const isEmpty = allApps.length === 0;
+  const isEmpty = !timelineLoading && allApps.length === 0 && !syncLoading;
+  const loading = syncLoading || timelineLoading;
 
   const appsCount = allApps.length;
   const interviewsCount = allApps.filter((a) => a.status === 'Interview').length;
@@ -58,8 +60,18 @@ function DashboardContent() {
     : 0;
   const offersCount = allApps.filter((a) => a.status === 'Offer').length;
 
+  if (loading) {
+    return (
+      <AppShell rightPanel={<AIPanel isEmpty applications={[]} />}>
+        <Section>
+          <div style={{ padding: 40, textAlign: 'center', color: '#6B7A9E', fontSize: 13 }}>Loading your dashboard...</div>
+        </Section>
+      </AppShell>
+    );
+  }
+
   return (
-    <AppShell rightPanel={<AIPanel isEmpty={isEmpty} />}>
+    <AppShell rightPanel={<AIPanel isEmpty={isEmpty} applications={allApps} />}>
       <Section>
         <HeroFocus isEmpty={isEmpty} />
       </Section>
@@ -80,12 +92,12 @@ function DashboardContent() {
       {!isEmpty && (
         <Section>
           <h3 style={{ fontSize: 13, fontWeight: 600, color: '#E8EBF4', margin: '0 0 12px' }}>Application Pipeline</h3>
-          <Pipeline />
+          <Pipeline applications={allApps} />
         </Section>
       )}
 
       <Section>
-        <CareerTimeline isEmpty={isEmpty} />
+        <CareerTimeline isEmpty={isEmpty} applications={allApps} />
       </Section>
     </AppShell>
   );
