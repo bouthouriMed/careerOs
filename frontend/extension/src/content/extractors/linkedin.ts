@@ -7,6 +7,7 @@ interface Extraction {
   companyUrl?: string;
   jobTitle: string;
   jobDescription?: string;
+  jobDescriptionHtml?: string;
   jobLocation?: string;
   salaryMin?: number;
   salaryMax?: number;
@@ -149,6 +150,8 @@ async function extractViaPublicAPI(): Promise<Extraction | null> {
     // Description
     const descEl = doc.querySelector('.description__text');
     const description = descEl?.textContent?.trim().slice(0, 8000) || undefined;
+    const descHtmlEl = doc.querySelector('.show-more-less-html__markup');
+    const jobDescriptionHtml = descHtmlEl?.innerHTML?.trim().slice(0, 10000) || undefined;
 
     // Posted time
     const postedEl = doc.querySelector('.posted-time-ago__text');
@@ -207,6 +210,7 @@ async function extractViaPublicAPI(): Promise<Extraction | null> {
         companyUrl,
         jobTitle: title,
         jobDescription: description,
+        jobDescriptionHtml,
         jobLocation: location,
         salaryMin, salaryMax, salaryCurrency,
         jobType,
