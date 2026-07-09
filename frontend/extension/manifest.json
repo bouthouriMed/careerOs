@@ -3,7 +3,7 @@
   "name": "CareerOS — Save Jobs",
   "description": "Save job postings to CareerOS with one click. Automatically extracts job title, company, salary, and more.",
   "version": "0.1.0",
-  "permissions": ["storage", "activeTab"],
+  "permissions": ["storage", "activeTab", "scripting"],
   "host_permissions": [
     "https://*.linkedin.com/*",
     "https://*.indeed.com/*",

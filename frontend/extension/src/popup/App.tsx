@@ -31,16 +31,33 @@ async function getCurrentTab(): Promise<chrome.tabs.Tab | null> {
   }
 }
 
-async function requestJobData(tabId: number): Promise<JobData | null> {
+async function injectContentScript(tabId: number): Promise<boolean> {
   try {
-    const results = await chrome.tabs.sendMessage<{ type: string }, JobData | null>(
-      tabId,
-      { type: 'CAREEROS_EXTRACT' },
-    );
-    return results ?? null;
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: ['content.js'],
+    });
+    return true;
   } catch {
-    return null;
+    return false;
   }
+}
+
+async function requestJobData(tabId: number): Promise<JobData | null> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const results = await chrome.tabs.sendMessage<{ type: string }, JobData | null>(
+        tabId,
+        { type: 'CAREEROS_EXTRACT' },
+      );
+      if (results) return results;
+    } catch {
+      // content script not loaded — inject it
+      await injectContentScript(tabId);
+      await new Promise((r) => setTimeout(r, 300));
+    }
+  }
+  return null;
 }
 
 export function App() {
@@ -59,7 +76,7 @@ export function App() {
       setUserName(auth.user.name ?? auth.user.email);
 
       const tab = await getCurrentTab();
-      if (!tab || !tab.id || !tab.url) {
+      if (!tab || !tab.id || !tab.url || tab.url === 'about:blank') {
         setView('idle');
         return;
       }
@@ -122,14 +139,14 @@ export function App() {
   if (view === 'idle') {
     return (
       <div style={styles.container}>
-        <Header />
+        <Header userName={userName} />
         <div style={styles.emptyState}>
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={tokens.colors.dim} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" />
           </svg>
           <div style={styles.emptyTitle}>No job detected</div>
           <div style={styles.emptyDesc}>
-            Navigate to a job posting on LinkedIn, Indeed, Greenhouse, or supported career sites.
+            Navigate to a job posting and click the CareerOS icon again.
           </div>
         </div>
       </div>
@@ -139,7 +156,7 @@ export function App() {
   if (view === 'saved') {
     return (
       <div style={styles.container}>
-        <Header />
+        <Header userName={userName} />
         <div style={styles.successBanner}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12" />
@@ -157,7 +174,7 @@ export function App() {
   if (view === 'error') {
     return (
       <div style={styles.container}>
-        <Header />
+        <Header userName={userName} />
         <div style={styles.errorBanner}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
