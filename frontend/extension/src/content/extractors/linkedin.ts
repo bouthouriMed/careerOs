@@ -13,23 +13,31 @@ interface Extraction {
   keywords?: string[];
 }
 
-/** Lines that are LinkedIn UI chrome, not job data */
-const NOISE = [
-  /^\d+$/, /^\d+ notification/, /^accueil$/i, /^mon réseau$/i,
-  /^emplois$/i, /^messagerie$/i, /^notifications$/i, /^vous$/i,
-  /^pour les entreprises/i, /^réactivez/i, /^passer au/i,
-  /^les dernières/i, /^niveau d'expérience/i, /^type d'emploi$/i,
-  /^entreprise$/i, /^moins de \d+/i, /^dans mon réseau/i,
-  /^la recherche par l'ia/i, /^résultats$/i, /^\d+ résultats/i,
-  /^comment sont classées/i, /^à distance$/i, /^candidature simplifiée/i,
-  /^ui$/i, /^ux$/i, /^saas$/i, /^fintech$/i, /^espagne$/i,
-  /^publi/i, /^promu/i, /^vérifiée/i, /^soyez/i, /^sauvegarder/i,
-  /^signaler/i, /^partager/i, /^voir/i, /^masquer/i, /^suivant/i,
-  /^précédent/i, /^charger/i,
-];
+const LABELS = new Set([
+  'accueil', 'mon réseau', 'emplois', 'messagerie', 'notifications', 'vous',
+  'pour les entreprises', 'niveau d\'expérience', 'type d\'emploi', 'entreprise',
+  'lieu', 'localisation', 'moins de 10 candidats', 'dans mon réseau',
+  'candidature simplifiée', 'la recherche par l\'ia est en phase bêta',
+  'à propos de l\'offre d\'emploi', 'à propos de l\'offre',
+  'comment sont classées les offres d\'emploi promues',
+  'personnes que vous pouvez contacter', 'rencontrez l\'équipe de recrutement',
+  'auteur de l\'offre d\'emploi', 'envoyer un message',
+  'enregistrer', 'sauvegarder', 'signaler', 'partager', 'suivant', 'précédent',
+  'ui', 'ux', 'saas', 'fintech', 'espagne',
+  'réactivez premium', 'réactivez premium : - 50%',
+  'passez au contenu principal', 'passer au contenu principal',
+  'les dernières 24 heures', 'les dernières 24h',
+  'à distance', 'modalidad', 'tareas a realizar',
+  'compétences', 'qualifications', 'responsabilités',
+  'salaire', 'il y a', 'publié', 'promu', 'vérifiée', 'soyez',
+  'masquer', 'voir', 'charger',
+]);
 
 function isNoise(l: string): boolean {
-  return NOISE.some((p) => p.test(l.trim()));
+  const t = l.trim().toLowerCase();
+  if (/^\d+$/.test(t) || /^\d+ notification/.test(t)) return true;
+  if (LABELS.has(t) || [...LABELS].some((label) => t.startsWith(label))) return true;
+  return false;
 }
 
 /** Extract from JSON-LD */
@@ -47,7 +55,6 @@ function extractLdJson(): Extraction | null {
 
         const org = job.hiringOrganization;
         const companyName = typeof org === 'object' ? (org?.name || org?.['@id'] || '') : (org || '');
-
         const loc = job.jobLocation;
         let jobLocation: string | undefined;
         if (typeof loc === 'object') {
@@ -59,7 +66,6 @@ function extractLdJson(): Extraction | null {
         } else if (typeof loc === 'string') {
           jobLocation = loc;
         }
-
         const salary = job.baseSalary;
         let salaryMin: number | undefined;
         let salaryMax: number | undefined;
@@ -69,14 +75,12 @@ function extractLdJson(): Extraction | null {
           salaryMax = salary?.maxValue ? Number(salary.maxValue) : undefined;
           salaryCurrency = salary?.currency;
         }
-
         let skillsList: string[] | undefined;
         if (typeof job.skills === 'string') {
           skillsList = job.skills.split(',').map((s: string) => s.trim()).filter(Boolean).slice(0, 20);
         } else if (Array.isArray(job.skills)) {
           skillsList = job.skills.map((s: unknown) => String(s)).filter(Boolean).slice(0, 20);
         }
-
         const r: Extraction = {
           sourceUrl: window.location.href,
           companyName: companyName || '',
@@ -99,73 +103,110 @@ function extractLdJson(): Extraction | null {
   return null;
 }
 
-/** Extract from page text using simple positional heuristics */
+/**
+ * Extract from page text.
+ * Strategy: find the detail panel by locating "About the job" / "À propos de l'offre"
+ * in the raw text, then go backwards to find the job title and company.
+ */
 function extractFromText(): Extraction | null {
   const lines = document.body.innerText
     .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean);
+    .map((l) => l.trim());
 
-  // Remove noise lines
-  const clean = lines.filter((l) => !isNoise(l) && l.length > 1);
+  const allText = lines.join('\n');
 
-  if (clean.length < 3) return null;
-
-  // Find the first line that looks like a job title.
-  // A job title is typically long (>15 chars), contains letters and
-  // punctuation like / - , and starts with a capital letter.
-  const titleIdx = clean.findIndex((l) => {
-    if (l.length < 15) return false;
-    if (/^[a-z]/.test(l)) return false;  // starts with lowercase = not a title
-    if (/^\d/.test(l)) return false;
-    if (l.includes('résultat') || l.includes('offre d\'emploi promu')) return false;
-    return true;
-  });
-
-  if (titleIdx < 0) return null;
-  let jobTitle = clean[titleIdx];
-
-  // Strip badge suffixes like "(offre d'emploi vérifiée)", "(Verified)", etc.
-  jobTitle = jobTitle.replace(/\s*\([^)]*(vérifié|verified)[^)]*\)\s*/gi, '').trim();
-
-  // Company: first short line (2-40 chars) after the title
-  let companyName = '';
-  let companyIdx = -1;
-  for (let i = titleIdx + 1; i < clean.length; i++) {
-    const l = clean[i];
-    if (l === jobTitle) continue; // skip duplicate title
-    if (l.length > 2 && l.length < 50 && /^[A-ZÀ-Œ]/.test(l)) {
-      companyName = l;
-      companyIdx = i;
+  // --- Find description start marker ---
+  const descMarkers = [
+    'about the job', 'job description',
+    'à propos de l\'offre', 'description du poste',
+    'the role', 'what you\'ll do', 'who you are', 'about you',
+  ];
+  let descStart = -1;
+  for (let i = 0; i < lines.length; i++) {
+    const lower = lines[i].toLowerCase().trim();
+    if (descMarkers.some((m) => lower.startsWith(m))) {
+      descStart = i;
       break;
     }
   }
 
-  // Location: first line near company that looks like a place
-  let jobLocation: string | undefined;
-  const searchFrom = companyIdx > 0 ? companyIdx + 1 : titleIdx + 2;
-  for (let i = searchFrom; i < Math.min(searchFrom + 5, clean.length); i++) {
+  // --- Find job title by walking backwards from description section ---
+  const searchEnd = descStart > 0 ? descStart : Math.min(lines.length, 80);
+  const searchStart = Math.max(0, searchEnd - 60);
+
+  // In the region BEFORE the description, find the job title and company
+  const region = lines.slice(searchStart, searchEnd).filter((l) => l.length > 1);
+
+  // Filter out noise
+  const clean = region.filter((l) => !isNoise(l));
+
+  // Now find the LAST line in this region that looks like a job title
+  // (the detail panel's title appears AFTER the search-results-list titles)
+  let jobTitle = '';
+  let titleIdx = -1;
+  for (let i = clean.length - 1; i >= 0; i--) {
     const l = clean[i];
+    if (l.length < 20) continue;
+    if (/^[a-z]/.test(l)) continue;
+    // Likely a real title: has specific patterns like /, -, or multiple uppercase words
+    if (l.includes('/') || l.includes(' - ') || l.includes(' | ')) {
+      jobTitle = l;
+      titleIdx = i;
+      break;
+    }
+  }
+  // Fallback: longest line in region
+  if (!jobTitle && clean.length > 0) {
+    const sorted = [...clean].sort((a, b) => b.length - a.length);
+    jobTitle = sorted[0];
+    titleIdx = clean.indexOf(jobTitle);
+  }
+
+  // Strip badge suffixes
+  jobTitle = jobTitle.replace(/\s*\([^)]*(vérifié|verified)[^)]*\)\s*/gi, '').trim();
+
+  // --- Company: first short line near the title ---
+  let companyName = '';
+  for (let i = titleIdx + 1; i < Math.min(titleIdx + 8, clean.length); i++) {
+    const l = clean[i];
+    if (l === jobTitle || isNoise(l)) continue;
+    if (l.length > 2 && l.length < 45 && /^[A-ZÀ-Œ]/.test(l)) {
+      companyName = l;
+      break;
+    }
+  }
+  // If not found below title, try above
+  if (!companyName) {
+    for (let i = titleIdx - 1; i >= Math.max(0, titleIdx - 5); i--) {
+      const l = clean[i];
+      if (l === jobTitle || isNoise(l)) continue;
+      if (l.length > 2 && l.length < 45 && /^[A-ZÀ-Œ]/.test(l)) {
+        companyName = l;
+        break;
+      }
+    }
+  }
+
+  // --- Location ---
+  let jobLocation: string | undefined;
+  const nearLines = clean.slice(Math.max(0, titleIdx - 3), titleIdx + 8);
+  for (const l of nearLines) {
     if (l === jobTitle || l === companyName) continue;
-    // Location patterns: has comma, or contains known place words/patterns
-    if (
-      (l.includes(',') || l.includes('(') || l.includes('Hybride') || l.includes('Remote') ||
-       l.includes('À distance') || l.includes('Madrid') || l.includes('Paris') || l.includes('Barcelona') ||
-       l.includes('London') || l.includes('Berlin') || l.includes('New York') || l.includes('San Francisco') ||
-       /^[A-Z][a-z]+(\s|,|$)/.test(l)) &&
-      l.length < 60
-    ) {
+    if (l.length > 2 && l.length < 60 &&
+        (l.includes(',') || l.includes('(') || l.includes('Hybride') ||
+         l.includes('Remote') || l.includes('À distance') ||
+         /(madrid|paris|barcelona|london|berlin|new york|san francisco|spain|france|germany|uk|usa)/i.test(l))) {
       jobLocation = l;
       break;
     }
   }
 
-  // Salary: find anywhere near title/company
+  // --- Salary ---
+  const moreLines = lines.slice(Math.max(0, titleIdx - 5), titleIdx + 15);
   let salaryMin: number | undefined;
   let salaryMax: number | undefined;
   let salaryCurrency: string | undefined;
-  const nearLines = clean.slice(Math.max(0, titleIdx - 2), titleIdx + 10);
-  const salaryLine = nearLines.find((l) => /[$£€₹¥]\s*\d[\d,]*/.test(l));
+  const salaryLine = moreLines.find((l) => /[$£€₹¥]\s*\d[\d,]*/.test(l));
   if (salaryLine) {
     const nums = salaryLine.match(/\d[\d,]*/g);
     const curr = salaryLine.match(/([A-Z]{3}|[$£€₹¥])/);
@@ -177,39 +218,25 @@ function extractFromText(): Extraction | null {
     }
   }
 
-  // Job type
-  const typeLine = nearLines.find((l) =>
+  // --- Job type ---
+  const typeLine = moreLines.find((l) =>
     /(full.?time|part.?time|contract|temporary|internship|freelance|cdi|cdd|temps plein|temps partiel)/i.test(l),
   );
   const jobType = typeLine || undefined;
 
-  // Description: find "About the job" or equivalent in the full text
-  const allLines = lines; // use unfiltered lines for description
-  const descMarkers = [
-    'about the job', 'job description', 'description',
-    'à propos de l\'offre', 'description du poste',
-    'the role', 'what you\'ll do', 'who you are', 'about you',
-  ];
-  let descStart = -1;
-  for (let i = 0; i < allLines.length; i++) {
-    const lower = allLines[i].toLowerCase().trim();
-    if (descMarkers.some((m) => lower.startsWith(m))) {
-      descStart = i;
-      break;
-    }
-  }
+  // --- Description ---
   const jobDescription = descStart >= 0
-    ? allLines.slice(descStart).join('\n').slice(0, 8000)
+    ? lines.slice(descStart).join('\n').slice(0, 8000)
     : undefined;
 
-  // Keywords: look for "Skills" or "Qualifications" section
+  // --- Keywords ---
   const keywords: string[] = [];
-  const kwStart = allLines.findIndex((l) =>
+  const kwStart = lines.findIndex((l) =>
     /^(skills|qualifications|compétences|requis)/i.test(l.trim()),
   );
   if (kwStart >= 0) {
-    for (let i = kwStart + 1; i < Math.min(kwStart + 25, allLines.length); i++) {
-      const l = allLines[i].trim();
+    for (let i = kwStart + 1; i < Math.min(kwStart + 25, lines.length); i++) {
+      const l = lines[i].trim();
       if (l.length < 60 && l.length > 2 && !l.endsWith('.') && !l.endsWith(':')) {
         keywords.push(l);
       }
@@ -238,17 +265,15 @@ function extractFromText(): Extraction | null {
 export function extractLinkedIn(): Extraction | null {
   console.log('[CareerOS] extractLinkedIn running on', window.location.href);
 
-  // 1. JSON-LD
   const ld = extractLdJson();
   if (ld) {
     console.log('[CareerOS] success: JSON-LD');
     return ld;
   }
 
-  // 2. Text heuristics
   const text = extractFromText();
   if (text) {
-    console.log('[CareerOS] success: text heuristic');
+    console.log('[CareerOS] success: text heuristic, title:', text.jobTitle, 'company:', text.companyName);
     return text;
   }
 
