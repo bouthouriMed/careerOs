@@ -1,9 +1,9 @@
 export const styles = {
   container: {
-    padding: '20px',
+    padding: '16px',
     display: 'flex',
     flexDirection: 'column' as const,
-    gap: '16px',
+    gap: '12px',
   },
 
   header: {
@@ -46,34 +46,81 @@ export const styles = {
     padding: '16px',
     display: 'flex',
     flexDirection: 'column' as const,
+    gap: '12px',
+  },
+
+  companyRow: {
+    display: 'flex',
+    alignItems: 'center' as const,
     gap: '10px',
   },
 
-  cardTitle: {
-    fontSize: '13px',
-    fontWeight: 600,
-    color: '#E8EBF4',
-  },
+  companyAvatar: (color: string): React.CSSProperties => ({
+    width: '36px',
+    height: '36px',
+    borderRadius: '10px',
+    background: color,
+    display: 'flex',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    fontSize: '16px',
+    fontWeight: 700,
+    color: '#FFFFFF',
+    flexShrink: 0,
+  }),
 
-  field: {
+  companyInfo: {
     display: 'flex',
     flexDirection: 'column' as const,
-    gap: '2px',
+    gap: '1px',
   },
 
-  fieldLabel: {
+  companyName: {
+    fontSize: '13px',
+    fontWeight: 600,
+    color: '#A8B3CF',
+    lineHeight: 1.3,
+  },
+
+  jobTitle: {
+    fontSize: '15px',
+    fontWeight: 700,
+    color: '#E8EBF4',
+    lineHeight: 1.35,
+    letterSpacing: '-0.2px',
+  },
+
+  metaRow: {
+    display: 'flex',
+    flexWrap: 'wrap' as const,
+    gap: '6px',
+  },
+
+  badge: {
+    display: 'inline-flex',
+    alignItems: 'center' as const,
+    gap: '4px',
+    fontSize: '11px',
+    fontWeight: 500,
+    padding: '4px 10px',
+    borderRadius: '8px',
+    background: 'rgba(255,255,255,0.04)',
+    color: '#A8B3CF',
+    border: '1px solid rgba(255,255,255,0.05)',
+  },
+
+  badgeIcon: {
+    display: 'flex',
+    flexShrink: 0,
+  },
+
+  sectionLabel: {
     fontSize: '10px',
     fontWeight: 600,
     color: '#6B7A9E',
     textTransform: 'uppercase' as const,
     letterSpacing: '0.05em',
-  },
-
-  fieldValue: {
-    fontSize: '12px',
-    color: '#A8B3CF',
-    lineHeight: 1.5,
-    wordBreak: 'break-word' as const,
+    marginBottom: '-4px',
   },
 
   chipGroup: {
@@ -83,17 +130,30 @@ export const styles = {
   },
 
   chip: {
-    fontSize: '10px',
+    fontSize: '11px',
     fontWeight: 500,
-    padding: '3px 8px',
+    padding: '4px 10px',
     borderRadius: '6px',
-    background: 'rgba(255,255,255,0.05)',
-    color: '#A8B3CF',
+    background: 'rgba(79, 142, 247, 0.1)',
+    color: '#7BA9F9',
+    border: '1px solid rgba(79, 142, 247, 0.15)',
+  },
+
+  descriptionBox: {
+    fontSize: '11px',
+    color: '#8A94A6',
+    lineHeight: 1.6,
+    maxHeight: '96px',
+    overflowY: 'auto' as const,
+    padding: '8px 10px',
+    borderRadius: '8px',
+    background: 'rgba(255,255,255,0.02)',
+    border: '1px solid rgba(255,255,255,0.04)',
   },
 
   primaryButton: {
     width: '100%',
-    padding: '12px 16px',
+    padding: '11px 16px',
     borderRadius: '10px',
     border: 'none',
     background: 'linear-gradient(135deg, #4F8EF7, #A78BFA)',
@@ -124,7 +184,6 @@ export const styles = {
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
     gap: '6px',
-    transition: 'background 0.15s, color 0.15s',
   } as React.CSSProperties,
 
   successBanner: {
@@ -187,7 +246,7 @@ export const styles = {
   footer: {
     display: 'flex',
     justifyContent: 'center' as const,
-    padding: '8px 0 0',
+    padding: '4px 0 0',
   },
 
   footerLink: {
