@@ -9,20 +9,14 @@
     "https://*.indeed.com/*",
     "https://*.greenhouse.io/*",
     "https://*.lever.co/*",
-    "https://careers.*/*",
-    "https://*.jobs/*",
     "http://localhost:4000/*"
   ],
   "action": {
-    "default_popup": "src/popup/index.html",
-    "default_icon": {
-      "16": "public/icons/icon16.png",
-      "48": "public/icons/icon48.png",
-      "128": "public/icons/icon128.png"
-    }
+    "default_popup": "popup/index.html",
+    "default_title": "Save to CareerOS"
   },
   "background": {
-    "service_worker": "src/background.ts",
+    "service_worker": "background.js",
     "type": "module"
   },
   "content_scripts": [
@@ -31,17 +25,10 @@
         "https://*.linkedin.com/jobs/*",
         "https://*.indeed.com/*",
         "https://*.greenhouse.io/jobs/*",
-        "https://*.lever.co/jobs/*",
-        "https://careers.*/*",
-        "https://*.jobs/*"
+        "https://*.lever.co/jobs/*"
       ],
-      "js": ["src/content/index.ts"],
+      "js": ["content.js"],
       "run_at": "document_idle"
     }
-  ],
-  "icons": {
-    "16": "public/icons/icon16.png",
-    "48": "public/icons/icon48.png",
-    "128": "public/icons/icon128.png"
-  }
+  ]
 }
