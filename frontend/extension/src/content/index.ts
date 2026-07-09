@@ -25,7 +25,7 @@ function tryExtract() {
         return data;
       }
       if (data) {
-        console.log('[CareerOS] partial extraction from', extractor.name, ':', data);
+        console.log('[CareerOS] partial extraction from', extractor.name);
       }
     } catch (e) {
       console.warn('[CareerOS] extractor', extractor.name, 'error:', e);
