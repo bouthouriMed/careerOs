@@ -13,13 +13,17 @@ interface Extraction {
   keywords?: string[];
 }
 
-/** Extract jobId from URL */
 function getJobId(): string | null {
   const m = window.location.href.match(/currentJobId=(\d+)/);
   return m ? m[1] : null;
 }
 
-/** Fetch from LinkedIn's internal Voyager API (same-origin) */
+function cleanTitle(t: string): string {
+  return t.replace(/\s*\([^)]*(vérifié|verified)[^)]*\)\s*/gi, '').trim();
+}
+
+// ─── Strategy 1: Voyager API ──────────────────────────────────────
+
 async function extractViaAPI(): Promise<Extraction | null> {
   const jobId = getJobId();
   if (!jobId) return null;
@@ -34,19 +38,20 @@ async function extractViaAPI(): Promise<Extraction | null> {
         credentials: 'include',
       },
     );
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.log('[CareerOS] API returned', res.status);
+      return null;
+    }
 
     const data = await res.json();
     const included: Record<string, unknown>[] = data?.included || [];
 
-    // Find the job posting object
     const job = included.find(
       (i: Record<string, unknown>) =>
         typeof i.$type === 'string' && i.$type.includes('JobPosting'),
     ) as Record<string, unknown> | undefined;
-    if (!job) return null;
+    if (!job) { console.log('[CareerOS] API: no JobPosting in response'); return null; }
 
-    // Company
     const companyData = included.find(
       (i: Record<string, unknown>) =>
         typeof i.$type === 'string' && i.$type.includes('Company'),
@@ -57,7 +62,6 @@ async function extractViaAPI(): Promise<Extraction | null> {
       ((job?.companyDetails as Record<string, unknown>)?.company as Record<string, unknown>)?.name as string ||
       '';
 
-    // Title
     const titleData = included.find(
       (i: Record<string, unknown>) =>
         typeof i.$type === 'string' && i.$type.includes('JobPostingTitle'),
@@ -67,7 +71,6 @@ async function extractViaAPI(): Promise<Extraction | null> {
       (job?.title as string) ||
       '';
 
-    // Location
     const locData = included.find(
       (i: Record<string, unknown>) =>
         typeof i.$type === 'string' && i.$type.includes('JobPostingLocation'),
@@ -78,12 +81,10 @@ async function extractViaAPI(): Promise<Extraction | null> {
       (job?.formattedLocation as string) ||
       undefined;
 
-    // Description
     const desc = (job?.description as Record<string, unknown>)?.text as string ||
       (job?.description as string) ||
       '';
 
-    // Salary
     const salary = job?.salary as Record<string, unknown> | undefined;
     let salaryMin: number | undefined;
     let salaryMax: number | undefined;
@@ -95,12 +96,10 @@ async function extractViaAPI(): Promise<Extraction | null> {
       salaryCurrency = (salary.currency as string) || (minVal?.currency as string);
     }
 
-    // Job type
     const jobType = (job?.employmentType as string) ||
       ((job?.workplaceTypes as string[])?.[0]) ||
       undefined;
 
-    // Skills
     const skills: string[] = [];
     const rawSkills = job?.skills as Record<string, unknown>[] | undefined;
     if (rawSkills) {
@@ -114,24 +113,109 @@ async function extractViaAPI(): Promise<Extraction | null> {
     return {
       sourceUrl: window.location.href,
       companyName: companyName || '',
-      companyDomain: companyName
-        ? `${companyName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`
-        : undefined,
+      companyDomain: companyName ? `${companyName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com` : undefined,
       jobTitle: jobTitle || '',
       jobDescription: desc ? desc.slice(0, 8000) : undefined,
       jobLocation,
-      salaryMin,
-      salaryMax,
-      salaryCurrency,
+      salaryMin, salaryMax, salaryCurrency,
       jobType,
       keywords: skills.length > 0 ? skills.slice(0, 20) : undefined,
     };
-  } catch {
+  } catch (e) {
+    console.log('[CareerOS] API fetch error:', e);
     return null;
   }
 }
 
-/** JSON-LD fallback */
+// ─── Strategy 2: selected job card (by href containing currentJobId) ──
+
+function extractFromSelectedCard(): Extraction | null {
+  const jobId = getJobId();
+  if (!jobId) return null;
+
+  // Find an <a> whose href contains the currentJobId
+  const links = document.querySelectorAll(`a[href*="${jobId}"]`);
+  if (!links.length) return null;
+
+  // The closest job-card-like ancestor is what we need
+  let card = links[0].closest('[class*="job-card"], [class*="search-result"], li, article') || links[0];
+  // Walk up a few levels to get the card container
+  for (let i = 0; i < 4; i++) {
+    const parent = card.parentElement;
+    if (!parent || parent === document.body) break;
+    if (parent.textContent && parent.textContent.trim().length > 100) card = parent;
+  }
+
+  const text = card.textContent?.trim() || '';
+  const lines = text.split('\n').map((l) => l.trim()).filter((l) => l.length > 1);
+
+  // Title: the first line with patterns typical of job titles
+  let jobTitle = '';
+  for (const l of lines) {
+    if (l.length >= 15 && !/^[a-z]/.test(l) && (l.includes('/') || l.includes(' - ') || l.includes(' | ') || l.length >= 25)) {
+      jobTitle = cleanTitle(l);
+      break;
+    }
+  }
+  if (!jobTitle) {
+    const sorted = [...lines].filter((l) => l.length >= 15 && !/^[a-z]/.test(l)).sort((a, b) => b.length - a.length);
+    jobTitle = sorted[0] || '';
+    jobTitle = cleanTitle(jobTitle);
+  }
+
+  // Company: first short line after the title
+  const titleIdx = lines.indexOf(jobTitle) >= 0 ? lines.indexOf(jobTitle) : 0;
+  let companyName = '';
+  for (let i = titleIdx + 1; i < Math.min(titleIdx + 6, lines.length); i++) {
+    const l = lines[i];
+    if (l.length > 1 && l.length < 45 && /^[A-ZÀ-Œ]/.test(l) && l !== jobTitle && !jobTitle.includes(l)) {
+      companyName = l;
+      break;
+    }
+  }
+
+  // Location
+  let jobLocation: string | undefined;
+  for (let i = titleIdx + 1; i < Math.min(titleIdx + 8, lines.length); i++) {
+    const l = lines[i];
+    if (l.includes(',') || l.includes('(') || l.includes('Hybride') || l.includes('Remote') ||
+        l.includes('À distance') || /(madrid|paris|barcelona|london|berlin|new york|san francisco|spain|france)/i.test(l)) {
+      jobLocation = l; break;
+    }
+  }
+
+  // Salary
+  let salaryMin: number | undefined, salaryMax: number | undefined, salaryCurrency: string | undefined;
+  const salLine = lines.find((l) => /[$£€₹¥]\s*\d[\d,]*/.test(l));
+  if (salLine) {
+    const nums = salLine.match(/\d[\d,]*/g);
+    const curr = salLine.match(/([A-Z]{3}|[$£€₹¥])/);
+    salaryCurrency = curr?.[1];
+    if (nums) {
+      const parsed = nums.map((n) => parseInt(n.replace(/,/g, ''), 10));
+      salaryMin = parsed[0];
+      if (parsed.length >= 2) salaryMax = parsed[parsed.length - 1];
+    }
+  }
+
+  // Job type
+  const typeLine = lines.find((l) =>
+    /(full.?time|part.?time|contract|temporary|internship|freelance|cdi|cdd|temps plein|temps partiel)/i.test(l));
+
+  if (!companyName && !jobTitle) return null;
+  return {
+    sourceUrl: window.location.href,
+    companyName: companyName || '',
+    companyDomain: companyName ? `${companyName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com` : undefined,
+    jobTitle: jobTitle || '',
+    jobLocation,
+    salaryMin, salaryMax, salaryCurrency,
+    jobType: typeLine || undefined,
+  };
+}
+
+// ─── Strategy 3: JSON-LD ──────────────────────────────────────────
+
 function extractLdJson(): Extraction | null {
   const scripts = document.querySelectorAll('script[type="application/ld+json"]');
   for (const script of scripts) {
@@ -149,38 +233,25 @@ function extractLdJson(): Extraction | null {
         let jobLocation: string | undefined;
         if (typeof loc === 'object') {
           const addr = loc?.address;
-          jobLocation = loc?.addressLocality
-            || loc?.name
-            || (typeof addr === 'object' ? addr?.addressLocality : undefined)
-            || (typeof addr === 'string' ? addr : undefined);
-        } else if (typeof loc === 'string') {
-          jobLocation = loc;
-        }
+          jobLocation = loc?.addressLocality || loc?.name || (typeof addr === 'object' ? addr?.addressLocality : undefined) || (typeof addr === 'string' ? addr : undefined);
+        } else if (typeof loc === 'string') jobLocation = loc;
         const salary = job.baseSalary;
-        let salaryMin: number | undefined;
-        let salaryMax: number | undefined;
-        let salaryCurrency: string | undefined;
+        let salaryMin: number | undefined, salaryMax: number | undefined, salaryCurrency: string | undefined;
         if (salary) {
           salaryMin = salary?.minValue ? Number(salary.minValue) : undefined;
           salaryMax = salary?.maxValue ? Number(salary.maxValue) : undefined;
           salaryCurrency = salary?.currency;
         }
         let skillsList: string[] | undefined;
-        if (typeof job.skills === 'string') {
-          skillsList = job.skills.split(',').map((s: string) => s.trim()).filter(Boolean).slice(0, 20);
-        } else if (Array.isArray(job.skills)) {
-          skillsList = job.skills.map((s: unknown) => String(s)).filter(Boolean).slice(0, 20);
-        }
+        if (typeof job.skills === 'string') skillsList = job.skills.split(',').map((s: string) => s.trim()).filter(Boolean).slice(0, 20);
+        else if (Array.isArray(job.skills)) skillsList = job.skills.map((s: unknown) => String(s)).filter(Boolean).slice(0, 20);
         const r: Extraction = {
           sourceUrl: window.location.href,
           companyName: companyName || '',
           companyDomain: companyName ? `${String(companyName).toLowerCase().replace(/[^a-z0-9]/g, '')}.com` : undefined,
           jobTitle: job.title || '',
           jobDescription: job.description || undefined,
-          jobLocation,
-          salaryMin,
-          salaryMax,
-          salaryCurrency,
+          jobLocation, salaryMin, salaryMax, salaryCurrency,
           jobType: job.employmentType || undefined,
           keywords: skillsList,
         };
@@ -190,6 +261,8 @@ function extractLdJson(): Extraction | null {
   }
   return null;
 }
+
+// ─── Strategy 4: Full-page text heuristic (last resort) ───────────
 
 const LABELS = new Set([
   'accueil', 'mon réseau', 'emplois', 'messagerie', 'notifications', 'vous',
@@ -218,21 +291,17 @@ function isNoise(l: string): boolean {
   return false;
 }
 
-/** Text heuristic fallback */
 function extractFromText(): Extraction | null {
   const lines = document.body.innerText.split('\n').map((l) => l.trim());
   const descMarkers = [
-    'about the job', 'job description',
-    'à propos de l\'offre', 'description du poste',
+    'about the job', 'job description', 'à propos de l\'offre', 'description du poste',
     'the role', 'what you\'ll do', 'who you are', 'about you',
   ];
-
   let descStart = -1;
   for (let i = 0; i < lines.length; i++) {
     const lower = lines[i].toLowerCase().trim();
     if (descMarkers.some((m) => lower.startsWith(m))) { descStart = i; break; }
   }
-
   const searchEnd = descStart > 0 ? descStart : Math.min(lines.length, 80);
   const searchStart = Math.max(0, searchEnd - 60);
   const region = lines.slice(searchStart, searchEnd).filter((l) => l.length > 1);
@@ -252,8 +321,7 @@ function extractFromText(): Extraction | null {
     jobTitle = sorted[0];
     titleIdx = clean.indexOf(jobTitle);
   }
-
-  jobTitle = jobTitle.replace(/\s*\([^)]*(vérifié|verified)[^)]*\)\s*/gi, '').trim();
+  jobTitle = cleanTitle(jobTitle);
 
   let companyName = '';
   for (let i = titleIdx + 1; i < Math.min(titleIdx + 8, clean.length); i++) {
@@ -287,30 +355,10 @@ function extractFromText(): Extraction | null {
     const nums = salaryLine.match(/\d[\d,]*/g);
     const curr = salaryLine.match(/([A-Z]{3}|[$£€₹¥])/);
     salaryCurrency = curr?.[1];
-    if (nums) {
-      const parsed = nums.map((n) => parseInt(n.replace(/,/g, ''), 10));
-      salaryMin = parsed[0];
-      if (parsed.length >= 2) salaryMax = parsed[parsed.length - 1];
-    }
+    if (nums) { const parsed = nums.map((n) => parseInt(n.replace(/,/g, ''), 10)); salaryMin = parsed[0]; if (parsed.length >= 2) salaryMax = parsed[parsed.length - 1]; }
   }
-
-  const typeLine = moreLines.find((l) =>
-    /(full.?time|part.?time|contract|temporary|internship|freelance|cdi|cdd|temps plein|temps partiel)/i.test(l));
-
-  const jobDescription = descStart >= 0
-    ? lines.slice(descStart).join('\n').slice(0, 8000)
-    : undefined;
-
-  const keywords: string[] = [];
-  const kwStart = lines.findIndex((l) => /^(skills|qualifications|compétences|requis)/i.test(l.trim()));
-  if (kwStart >= 0) {
-    for (let i = kwStart + 1; i < Math.min(kwStart + 25, lines.length); i++) {
-      const l = lines[i].trim();
-      if (l.length < 60 && l.length > 2 && !l.endsWith('.') && !l.endsWith(':') && !/^(voir|see|about|job|company)/i.test(l)) {
-        keywords.push(l);
-      }
-    }
-  }
+  const typeLine = moreLines.find((l) => /(full.?time|part.?time|contract|temporary|internship|freelance|cdi|cdd|temps plein|temps partiel)/i.test(l));
+  const jobDescription = descStart >= 0 ? lines.slice(descStart).join('\n').slice(0, 8000) : undefined;
 
   if (!companyName && !jobTitle) return null;
   return {
@@ -319,23 +367,23 @@ function extractFromText(): Extraction | null {
     companyDomain: companyName ? `${companyName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com` : undefined,
     jobTitle: jobTitle || '',
     jobDescription,
-    jobLocation,
-    salaryMin, salaryMax, salaryCurrency,
+    jobLocation, salaryMin, salaryMax, salaryCurrency,
     jobType: typeLine || undefined,
-    keywords: keywords.length > 0 ? [...new Set(keywords)].slice(0, 20) : undefined,
   };
 }
+
+// ─── Main export ──────────────────────────────────────────────────
 
 export async function extractLinkedIn(): Promise<Extraction | null> {
   console.log('[CareerOS] extractLinkedIn running on', window.location.href);
 
   try {
     const api = await extractViaAPI();
-    if (api) {
-      console.log('[CareerOS] success: Voyager API');
-      return api;
-    }
-  } catch { /* API failed, fall through */ }
+    if (api) { console.log('[CareerOS] success: Voyager API'); return api; }
+  } catch { /* fall through */ }
+
+  const card = extractFromSelectedCard();
+  if (card) { console.log('[CareerOS] success: selected card'); return card; }
 
   const ld = extractLdJson();
   if (ld) { console.log('[CareerOS] success: JSON-LD'); return ld; }
