@@ -39,7 +39,10 @@ tryExtractAsync().then((data) => {
 chrome.runtime.onMessage.addListener(
   (message: { type: string }, _sender: chrome.runtime.MessageSender, sendResponse: (data: unknown) => void) => {
     if (message.type === 'CAREEROS_EXTRACT') {
-      tryExtractAsync().then((data) => sendResponse(data));
+      tryExtractAsync().then((data) => {
+        console.log('[CareerOS] sending response:', data ? `${data.jobTitle} @ ${data.companyName}` : 'null');
+        sendResponse(data);
+      });
     }
     return true;
   },

@@ -39,8 +39,8 @@ async function extractViaPublicAPI(): Promise<Extraction | null> {
     }
 
     const html = await res.text();
-    const doc = document.createElement('html');
-    doc.innerHTML = html;
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
 
     // Extract from JSON-LD in the fetched page
     const scripts = doc.querySelectorAll('script[type="application/ld+json"]');

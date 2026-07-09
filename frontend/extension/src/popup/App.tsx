@@ -44,20 +44,26 @@ async function injectContentScript(tabId: number): Promise<boolean> {
 }
 
 async function requestJobData(tabId: number): Promise<JobData | null> {
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const results = await chrome.tabs.sendMessage<{ type: string }, JobData | null>(
         tabId,
         { type: 'CAREEROS_EXTRACT' },
       );
-      if (results) return results;
+      // If we got a response (even null), don't retry
+      if (results !== undefined) return results;
     } catch {
       // content script not loaded — inject it
       await injectContentScript(tabId);
       await new Promise((r) => setTimeout(r, 300));
     }
   }
-  return null;
+  // Last attempt — let the exception propagate as null
+  try {
+    return await chrome.tabs.sendMessage(tabId, { type: 'CAREEROS_EXTRACT' });
+  } catch {
+    return null;
+  }
 }
 
 export function App() {
