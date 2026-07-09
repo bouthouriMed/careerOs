@@ -3,6 +3,8 @@ interface Extraction {
   companyName: string;
   companyDomain?: string;
   companyDescription?: string;
+  companyLogoUrl?: string;
+  companyUrl?: string;
   jobTitle: string;
   jobDescription?: string;
   jobLocation?: string;
@@ -11,6 +13,11 @@ interface Extraction {
   salaryCurrency?: string;
   jobType?: string;
   keywords?: string[];
+  seniority?: string;
+  industry?: string;
+  jobFunction?: string;
+  postedTime?: string;
+  applicantCount?: number;
 }
 
 function getJobId(): string | null {
@@ -125,21 +132,42 @@ async function extractViaPublicAPI(): Promise<Extraction | null> {
       const row = doc.querySelector('.topcard__flavor-row');
       if (!row) return undefined;
       const bullets = row.querySelectorAll('.topcard__flavor--bullet');
-      // first bullet span in the first flavor-row is the location
       for (const b of bullets) {
         if (b.tagName === 'SPAN') return b.textContent?.trim();
       }
       return undefined;
     })();
 
+    // Company logo + URL
+    const logoImg = doc.querySelector<HTMLImageElement>('img.artdeco-entity-image[data-delayed-url]');
+    const companyLogoUrl = logoImg?.getAttribute('data-delayed-url') || undefined;
+    const companyUrl =
+      doc.querySelector<HTMLAnchorElement>('a[data-tracking-control-name="public_jobs_topcard_logo"]')?.href ||
+      doc.querySelector<HTMLAnchorElement>('.topcard__org-name-link')?.href ||
+      undefined;
+
     // Description
     const descEl = doc.querySelector('.description__text');
     const description = descEl?.textContent?.trim().slice(0, 8000) || undefined;
+
+    // Posted time
+    const postedEl = doc.querySelector('.posted-time-ago__text');
+    const postedTime = postedEl?.textContent?.trim() || undefined;
+
+    // Applicant count
+    const applicantsEl = doc.querySelector('.num-applicants__caption');
+    const applicantCount = (() => {
+      if (!applicantsEl) return undefined;
+      const text = applicantsEl.textContent?.trim() || '';
+      const nums = text.match(/\d+/);
+      return nums ? parseInt(nums[0], 10) : undefined;
+    })();
 
     // Criteria list: seniority, job type, function, industry
     let jobType: string | undefined;
     let seniority: string | undefined;
     let jobFunction: string | undefined;
+    let industry: string | undefined;
     const criteriaItems = doc.querySelectorAll('.description__job-criteria-item');
     for (const item of criteriaItems) {
       const header = item.querySelector('.description__job-criteria-subheader');
@@ -150,6 +178,7 @@ async function extractViaPublicAPI(): Promise<Extraction | null> {
       if (label.includes('type') || label.includes('emploi')) jobType = val;
       else if (label.includes('niveau') || label.includes('hiérarchique') || label.includes('seniority')) seniority = val;
       else if (label.includes('fonction')) jobFunction = val;
+      else if (label.includes('secteur') || label.includes('industry')) industry = val;
     }
 
     // Salary text
@@ -174,11 +203,18 @@ async function extractViaPublicAPI(): Promise<Extraction | null> {
         sourceUrl: window.location.href,
         companyName: company,
         companyDomain: company ? `${company.toLowerCase().replace(/[^a-z0-9]/g, '')}.com` : undefined,
+        companyLogoUrl,
+        companyUrl,
         jobTitle: title,
         jobDescription: description,
         jobLocation: location,
         salaryMin, salaryMax, salaryCurrency,
         jobType,
+        seniority,
+        industry,
+        jobFunction,
+        postedTime,
+        applicantCount,
       };
     }
 

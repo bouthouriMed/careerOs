@@ -3,6 +3,7 @@ import { extractIndeed } from './extractors/indeed';
 import { extractGreenhouse } from './extractors/greenhouse';
 import { extractLever } from './extractors/lever';
 import { extractGeneric } from './extractors/generic';
+import { LinkedInWidget } from './linkedin-widget';
 
 type ExtractorFn = () => ReturnType<typeof extractGeneric>;
 
@@ -47,5 +48,11 @@ chrome.runtime.onMessage.addListener(
     return true;
   },
 );
+
+// Inject LinkedIn floating widget on job search pages
+if (window.location.hostname.includes('linkedin') && window.location.pathname.includes('/jobs/search')) {
+  const widget = new LinkedInWidget();
+  console.log('[CareerOS] LinkedIn widget injected');
+}
 
 console.log('[CareerOS] content script loaded');
