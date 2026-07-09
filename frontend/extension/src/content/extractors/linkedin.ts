@@ -13,49 +13,88 @@ interface Extraction {
   keywords?: string[];
 }
 
+function text(el: Element | null): string | undefined {
+  return el?.textContent?.trim() || undefined;
+}
+
+function findInContainer(container: Element | null, ...selectors: string[]): Element | null {
+  if (!container) return null;
+  for (const sel of selectors) {
+    const found = container.querySelector(sel);
+    if (found) return found;
+  }
+  return null;
+}
+
 export function extractLinkedIn(): Extraction | null {
   const url = window.location.href;
   console.log('[CareerOS] extractLinkedIn running on', url);
 
-  // Multiple selector strategies for LinkedIn's ever-changing DOM
-  const titleEl =
-    document.querySelector('.job-details-jobs-unified-top-card__job-title') ||
-    document.querySelector('.top-card-layout__title') ||
-    document.querySelector('[class*="job-title"]') ||
-    document.querySelector('[class*="jobTitle"]') ||
-    document.querySelector('h1');
-  let jobTitle = titleEl?.textContent?.trim() || '';
+  // The job details container differs between standalone /jobs/view/N and
+  // the search-results page with a selected result.  Grab the widest
+  // container that holds job details, then scope queries inside it.
+  const jobDetailContainer =
+    document.querySelector('.jobs-search__job-details--container') ||
+    document.querySelector('[data-view-name="job-details"]') ||
+    document.querySelector('.job-details-jobs-unified-top-card')?.closest('[class*="job-details"]') ||
+    document.querySelector('main') ||
+    document.querySelector('[class*="job-detail"]') ||
+    document.body;
 
-  const companyEl =
-    document.querySelector('.job-details-jobs-unified-top-card__company-name') ||
-    document.querySelector('.top-card-layout__second-line') ||
-    document.querySelector('[data-anonymize="company-name"]') ||
-    document.querySelector('[class*="company-name"]') ||
-    document.querySelector('[class*="companyName"]') ||
-    document.querySelector('[class*="org-name"]');
+  console.log('[CareerOS] jobDetailContainer tag:', jobDetailContainer.tagName,
+    'classes:', jobDetailContainer.className?.slice(0, 120));
+
+  // --- Job Title ---
+  const titleEl = findInContainer(jobDetailContainer,
+    '.job-details-jobs-unified-top-card__job-title',
+    '.top-card-layout__title',
+    '[class*="job-title"]',
+    '[class*="jobTitle"]',
+    'h1',
+  );
+  let jobTitle = text(titleEl) || '';
+
+  // --- Company ---
+  const companyEl = findInContainer(jobDetailContainer,
+    '.job-details-jobs-unified-top-card__company-name',
+    '.top-card-layout__second-line',
+    '[data-anonymize="company-name"]',
+    '[class*="company-name"]',
+    '[class*="companyName"]',
+    '[class*="org-name"]',
+    'a[data-anonymize="company-name"]',
+  );
   const companyNameNode = companyEl?.querySelector('a') || companyEl;
-  let companyName = companyNameNode?.textContent?.trim() || '';
+  let companyName = text(companyNameNode) || '';
 
-  const locationEl =
-    document.querySelector('.job-details-jobs-unified-top-card__bullet') ||
-    document.querySelector('.top-card-layout__third-line') ||
-    document.querySelector('[data-anonymize="location"]') ||
-    document.querySelector('[class*="location"]');
-  const jobLocation = locationEl?.textContent?.trim()?.split('\n')[0]?.trim() || undefined;
+  // --- Location ---
+  const locationEl = findInContainer(jobDetailContainer,
+    '.job-details-jobs-unified-top-card__bullet',
+    '.top-card-layout__third-line',
+    '[data-anonymize="location"]',
+    '[class*="location"]',
+  );
+  const jobLocation = locationEl
+    ? (text(locationEl)?.split('\n')[0]?.trim() || undefined)
+    : undefined;
 
-  const descEl =
-    document.querySelector('.jobs-description-content__text') ||
-    document.querySelector('.job-details-jobs-unified-top-card__job-description') ||
-    document.querySelector('[class*="description"]') ||
-    document.getElementById('job-details') ||
-    document.querySelector('article');
-  const jobDescription = descEl?.textContent?.trim() || undefined;
+  // --- Description ---
+  const descEl = findInContainer(jobDetailContainer,
+    '.jobs-description-content__text',
+    '.job-details-jobs-unified-top-card__job-description',
+    '[class*="description"]',
+    '#job-details',
+    'article',
+  );
+  const jobDescription = text(descEl);
 
-  const salaryEl =
-    document.querySelector('.job-details-jobs-unified-top-card__salary-info') ||
-    document.querySelector('[class*="salary"]') ||
-    document.querySelector('[class*="compensation"]');
-  const salaryText = salaryEl?.textContent?.trim();
+  // --- Salary ---
+  const salaryEl = findInContainer(jobDetailContainer,
+    '.job-details-jobs-unified-top-card__salary-info',
+    '[class*="salary"]',
+    '[class*="compensation"]',
+  );
+  const salaryText = text(salaryEl);
   let salaryMin: number | undefined;
   let salaryMax: number | undefined;
   let salaryCurrency: string | undefined;
@@ -65,60 +104,80 @@ export function extractLinkedIn(): Extraction | null {
     salaryCurrency = currencyMatch?.[1];
     if (nums) {
       const parsed = nums.map((n) => parseInt(n.replace(/,/g, ''), 10));
-      if (parsed.length >= 2) {
-        salaryMin = parsed[0];
-        salaryMax = parsed[1];
-      } else if (parsed.length === 1) {
-        salaryMin = parsed[0];
-      }
+      salaryMin = parsed[0];
+      if (parsed.length >= 2) salaryMax = parsed[1];
     }
   }
 
-  const criteriaEl =
-    document.querySelector('.job-details-jobs-unified-top-card__job-criteria') ||
-    document.querySelector('[class*="criteria"]');
+  // --- Job type ---
+  const criteriaEl = findInContainer(jobDetailContainer,
+    '.job-details-jobs-unified-top-card__job-criteria',
+    '[class*="criteria"]',
+  );
   let jobType: string | undefined;
   criteriaEl?.querySelectorAll('li, span').forEach((li) => {
-    const text = li.textContent?.trim().toLowerCase() || '';
-    if (text.includes('full-time') || text.includes('part-time') || text.includes('contract') || text.includes('temporary') || text.includes('internship')) {
+    const t = li.textContent?.trim().toLowerCase() || '';
+    if (t.includes('full-time') || t.includes('part-time') || t.includes('contract') || t.includes('temporary') || t.includes('internship')) {
       jobType = li.textContent?.trim() || undefined;
     }
   });
+  // Also check metadata chips anywhere
+  if (!jobType) {
+    jobDetailContainer.querySelectorAll('[class*="metadata"] span, [class*="chip"]').forEach((el) => {
+      const t = el.textContent?.trim().toLowerCase() || '';
+      if (t.includes('full-time') || t.includes('part-time') || t.includes('contract') || t.includes('internship')) {
+        jobType = el.textContent?.trim() || undefined;
+      }
+    });
+  }
 
-  // Also check metadata chips
-  document.querySelectorAll('[class*="metadata"] span, [class*="chip"]').forEach((el) => {
-    const text = el.textContent?.trim().toLowerCase() || '';
-    if (!jobType && (text.includes('full-time') || text.includes('part-time') || text.includes('contract') || text.includes('internship'))) {
-      jobType = el.textContent?.trim() || undefined;
-    }
-  });
-
+  // --- Keywords ---
   const keywords: string[] = [];
-  document.querySelectorAll('[class*="skill"], [class*="keyword"], [class*="tag"], [data-anonymize="skill"]').forEach((el) => {
-    const text = el.textContent?.trim();
-    if (text && text.length < 50) keywords.push(text);
+  jobDetailContainer.querySelectorAll('[class*="skill"], [class*="keyword"], [class*="tag"], [data-anonymize="skill"]').forEach((el) => {
+    const t = el.textContent?.trim();
+    if (t && t.length < 50) keywords.push(t);
   });
 
-  // If nothing found from specific selectors, try generic extraction from meta/JSON-LD
+  // --- Fallback: meta tags ---
   if (!companyName || !jobTitle) {
     const ogTitle = document.querySelector('meta[property="og:title"]')?.getAttribute('content');
     const ogSite = document.querySelector('meta[property="og:site_name"]')?.getAttribute('content');
     if (!jobTitle && ogTitle) {
-      // og:title format: "Job Title at Company Name"
       const parts = ogTitle.split(' at ');
       if (parts.length >= 2) {
-        const fallbackTitle = parts[0].trim();
-        const fallbackCompany = parts.slice(1).join(' at ').trim();
-        if (!jobTitle) jobTitle = fallbackTitle;
-        if (!companyName) companyName = fallbackCompany;
+        jobTitle ||= parts[0].trim();
+        companyName ||= parts.slice(1).join(' at ').trim();
       } else {
-        if (!jobTitle) jobTitle = ogTitle;
+        jobTitle ||= ogTitle;
       }
     }
-    if (!companyName && ogSite) companyName = ogSite;
+    companyName ||= ogSite || '';
   }
 
-  // If company name looks like URL, extract it
+  // --- Fallback: look at EVERYTHING in the detail container ---
+  if (!companyName && !jobTitle) {
+    // List all class names in the container to help debug
+    const allClasses = new Set<string>();
+    jobDetailContainer.querySelectorAll('[class]').forEach((el) => {
+      el.className?.split(/\s+/).forEach((c: string) => {
+        if (c.includes('card') || c.includes('title') || c.includes('company') || c.includes('header')) {
+          allClasses.add(c);
+        }
+      });
+    });
+    console.log('[CareerOS] relevant classes in container:', [...allClasses].slice(0, 30));
+
+    // Bruteforce: grab text of the first 10 <h1..h3> in the container
+    const headings = jobDetailContainer.querySelectorAll('h1, h2, h3');
+    if (headings.length > 0) {
+      jobTitle = headings[0]?.textContent?.trim() || '';
+      if (headings.length > 1) {
+        companyName = headings[1]?.textContent?.trim() || '';
+      }
+      console.log('[CareerOS] brute-force headings:', { h1: headings[0]?.textContent?.trim(), h2: headings[1]?.textContent?.trim(), h3: headings[2]?.textContent?.trim() });
+    }
+  }
+
   const domain = companyName
     ? `${companyName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`
     : undefined;
