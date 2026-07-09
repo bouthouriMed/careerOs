@@ -113,20 +113,44 @@ async function extractViaPublicAPI(): Promise<Extraction | null> {
       } catch { /* skip */ }
     }
 
-    // Fallback: parse from HTML elements
-    const title = doc.querySelector('h1')?.textContent?.trim() || '';
-    const company =
-      doc.querySelector('[class*="company"]')?.textContent?.trim() ||
-      doc.querySelector('[class*="topcard"]')?.textContent?.trim()?.split('\n')[0]?.trim() ||
+    // Fallback: parse from HTML elements (no JSON-LD in response)
+    const title =
+      doc.querySelector('.top-card-layout__title')?.textContent?.trim() ||
+      doc.querySelector('.topcard__title')?.textContent?.trim() ||
       '';
-    const location =
-      doc.querySelector('[class*="location"]')?.textContent?.trim() ||
-      doc.querySelector('[class*="topcard"] *:nth-child(3)')?.textContent?.trim() ||
-      undefined;
+    const company =
+      doc.querySelector('.topcard__org-name-link')?.textContent?.trim() ||
+      '';
+    const location = (() => {
+      const row = doc.querySelector('.topcard__flavor-row');
+      if (!row) return undefined;
+      const bullets = row.querySelectorAll('.topcard__flavor--bullet');
+      // first bullet span in the first flavor-row is the location
+      for (const b of bullets) {
+        if (b.tagName === 'SPAN') return b.textContent?.trim();
+      }
+      return undefined;
+    })();
 
     // Description
-    const descEl = doc.querySelector('[class*="description"], article, [class*="content"]');
+    const descEl = doc.querySelector('.description__text');
     const description = descEl?.textContent?.trim().slice(0, 8000) || undefined;
+
+    // Criteria list: seniority, job type, function, industry
+    let jobType: string | undefined;
+    let seniority: string | undefined;
+    let jobFunction: string | undefined;
+    const criteriaItems = doc.querySelectorAll('.description__job-criteria-item');
+    for (const item of criteriaItems) {
+      const header = item.querySelector('.description__job-criteria-subheader');
+      const value = item.querySelector('.description__job-criteria-text--criteria');
+      if (!header || !value) continue;
+      const label = header.textContent?.trim().toLowerCase() || '';
+      const val = value.textContent?.trim() || '';
+      if (label.includes('type') || label.includes('emploi')) jobType = val;
+      else if (label.includes('niveau') || label.includes('hiérarchique') || label.includes('seniority')) seniority = val;
+      else if (label.includes('fonction')) jobFunction = val;
+    }
 
     // Salary text
     const salaryText = doc.body.innerText.match(/[$£€₹¥]\s*\d[\d,]*\s*[-–]\s*[$£€₹¥]?\s*\d[\d,]*/)?.[0];
@@ -143,10 +167,6 @@ async function extractViaPublicAPI(): Promise<Extraction | null> {
         if (parsed.length >= 2) salaryMax = parsed[parsed.length - 1];
       }
     }
-
-    // Job type
-    const typeMatch = doc.body.innerText.match(/(full.?time|part.?time|contract|temporary|internship|freelance|cdi|cdd|temps plein|temps partiel)/i);
-    const jobType = typeMatch?.[0] || undefined;
 
     if (company && title) {
       console.log('[CareerOS] public API: HTML parse success');
