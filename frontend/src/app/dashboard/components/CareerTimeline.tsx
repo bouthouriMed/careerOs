@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import styled from 'styled-components';
 
 const TimelineCard = styled.div`
@@ -159,6 +160,7 @@ interface CareerTimelineProps {
 }
 
 export function CareerTimeline({ isEmpty, applications = [], loading }: CareerTimelineProps) {
+  const router = useRouter();
   if (loading) {
     return (
       <div>
@@ -191,7 +193,7 @@ export function CareerTimeline({ isEmpty, applications = [], loading }: CareerTi
     <div>
       <SectionHead>
         <SectionTitle>Career Activity</SectionTitle>
-        <ViewAll href="#">
+        <ViewAll href="/applications" onClick={(e) => { e.preventDefault(); router.push('/applications'); }}>
           View all
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="9 18 15 12 9 6" />
@@ -203,7 +205,7 @@ export function CareerTimeline({ isEmpty, applications = [], loading }: CareerTi
           const { icon, color, label } = getStatusIcon(app.status);
           const Icon = iconMap[icon];
           return (
-            <Row key={app.id}>
+            <Row key={app.id} onClick={() => router.push(`/applications?id=${app.id}`)}>
               <IconWrap><Icon color={color} /></IconWrap>
               <Body>
                 <Top>

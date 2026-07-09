@@ -1,4 +1,4 @@
-const API = 'http://localhost:3001';
+const API = 'http://localhost:4000';
 
 chrome.runtime.onInstalled.addListener(() => {
   console.log('CareerOS extension installed');
@@ -13,7 +13,7 @@ chrome.action.onClicked.addListener((tab) => {
 chrome.runtime.onMessage.addListener(
   (message: { type: string; data?: Record<string, unknown> }, _sender, sendResponse) => {
     if (message.type === 'CAREEROS_SAVE' && message.data) {
-      fetch(`${API}/api/applications/import`, {
+      fetch(`${API}/applications/import`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

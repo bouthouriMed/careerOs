@@ -55,6 +55,7 @@ export class ApplicationService {
       applications: applications.map(a => ({
         id: a.id,
         status: a.status,
+        source: a.source,
         companyName: a.company.name,
         companyDomain: a.company.domain,
         companyLogo: a.company.logoUrl,

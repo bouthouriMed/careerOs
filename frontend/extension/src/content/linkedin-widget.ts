@@ -425,7 +425,7 @@ export class LinkedInWidget {
     document.documentElement.appendChild(this.host);
 
     document.addEventListener('click', (e) => {
-      if (this.visible && !this.root.contains(e.target as Node)) this.hide();
+      if (this.visible && !this.host.contains(e.target as Node)) this.hide();
     });
 
     this.startWatching();

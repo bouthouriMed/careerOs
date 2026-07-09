@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import styled from 'styled-components';
 import { ProtectedRoute } from '@/platform/routing/protected-route';
 import { AppShell } from '@/platform/layout/AppShell';
@@ -244,6 +245,7 @@ const stages = [
   { key: 'Interviewing', label: 'Interview', color: '#34D399', bg: 'rgba(52,211,153,0.15)' },
   { key: 'Offer', label: 'Offer', color: '#F59E0B', bg: 'rgba(245,158,11,0.15)' },
   { key: 'Rejected', label: 'Rejected', color: '#F87171', bg: 'rgba(248,113,113,0.15)' },
+  { key: '__saved__', label: 'Saved', color: '#818cf8', bg: 'rgba(129,140,248,0.15)' },
 ];
 
 function getInitials(name: string): string {
@@ -265,6 +267,12 @@ function ApplicationsContent() {
   const { data: timelineData, isLoading } = useApplicationControllerGetTimelineQuery();
   const [activeTab, setActiveTab] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const id = searchParams.get('id');
+    if (id) setSelectedId(id);
+  }, [searchParams]);
 
   const allApps = useMemo(() => {
     if (!timelineData) return [];
@@ -274,6 +282,7 @@ function ApplicationsContent() {
 
   const filteredApps = useMemo(() => {
     if (!activeTab) return allApps;
+    if (activeTab === '__saved__') return allApps.filter((a: Record<string, unknown>) => a.source === 'browser_extension');
     return allApps.filter((a: Record<string, unknown>) => a.status === activeTab);
   }, [allApps, activeTab]);
 
@@ -299,9 +308,11 @@ function ApplicationsContent() {
 
       <Tabs>
         {stages.map((s) => {
-          const count = s.key
-            ? allApps.filter((a: Record<string, unknown>) => a.status === s.key).length
-            : allApps.length;
+          const count = !s.key
+            ? allApps.length
+            : s.key === '__saved__'
+              ? allApps.filter((a: Record<string, unknown>) => a.source === 'browser_extension').length
+              : allApps.filter((a: Record<string, unknown>) => a.status === s.key).length;
           return (
             <Tab key={s.key} $active={activeTab === s.key} onClick={() => setActiveTab(s.key)}>
               {s.label} ({count})
