@@ -17,14 +17,26 @@ export interface ImportPayload {
   source: 'browser_extension';
 }
 
+const IMPORT_ALLOWED = new Set([
+  'sourceUrl', 'companyName', 'companyDomain', 'companyDescription',
+  'jobTitle', 'jobDescription', 'jobLocation',
+  'salaryMin', 'salaryMax', 'salaryCurrency', 'jobType',
+  'keywords', 'applicationDeadline', 'source',
+]);
+
 export async function importApplication(
-  payload: ImportPayload,
+  payload: Record<string, unknown>,
 ): Promise<{ id: string }> {
+  const body: Record<string, unknown> = {};
+  for (const key of IMPORT_ALLOWED) {
+    if (key in payload) body[key] = payload[key];
+  }
+  if (!body.source) body.source = 'browser_extension';
   const res = await fetch(`${API_BASE}/applications/import`, {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(body),
   });
 
   if (!res.ok) {
