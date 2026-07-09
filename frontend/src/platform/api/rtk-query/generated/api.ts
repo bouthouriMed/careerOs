@@ -97,6 +97,13 @@ const injectedRtkApi = api
         query: (queryArg) => ({ url: `/recruiters/${queryArg}` }),
         providesTags: ['Recruiters'],
       }),
+      applicationControllerImport: build.mutation<
+        ApplicationControllerImportResponse,
+        ApplicationControllerImportArg
+      >({
+        query: (queryArg) => ({ url: `/applications/import`, method: 'POST', body: queryArg }),
+        invalidatesTags: ['Applications'],
+      }),
       applicationControllerFindAll: build.query<
         ApplicationControllerFindAllResponse,
         ApplicationControllerFindAllArg
@@ -184,6 +191,8 @@ export type RecruiterControllerFindByCompanyResponse = unknown;
 export type RecruiterControllerFindByCompanyArg = string;
 export type RecruiterControllerFindByIdResponse = unknown;
 export type RecruiterControllerFindByIdArg = string;
+export type ApplicationControllerImportResponse = unknown;
+export type ApplicationControllerImportArg = ImportApplicationDto;
 export type ApplicationControllerFindAllResponse = /** status 200  */ object[];
 export type ApplicationControllerFindAllArg = string;
 export type ApplicationControllerGetTimelineResponse = /** status 200  */ TimelineResponseDto;
@@ -215,6 +224,22 @@ export type SyncStatusResponseDto = {
 export type StartSyncResponseDto = {
   message: string;
   status: 'never_synced' | 'pending' | 'completed' | 'error';
+};
+export type ImportApplicationDto = {
+  sourceUrl: string;
+  companyName: string;
+  companyDomain?: string;
+  companyDescription?: string;
+  jobTitle: string;
+  jobDescription?: string;
+  jobLocation?: string;
+  salaryMin?: number;
+  salaryMax?: number;
+  salaryCurrency?: string;
+  jobType?: string;
+  keywords?: string[];
+  applicationDeadline?: string;
+  source: string;
 };
 export type RecruiterRefDto = {
   id: string;
@@ -307,6 +332,7 @@ export const {
   useJobControllerFindByIdQuery,
   useRecruiterControllerFindByCompanyQuery,
   useRecruiterControllerFindByIdQuery,
+  useApplicationControllerImportMutation,
   useApplicationControllerFindAllQuery,
   useApplicationControllerGetTimelineQuery,
   useApplicationControllerFindByIdQuery,

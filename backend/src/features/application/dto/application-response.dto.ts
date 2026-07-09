@@ -69,3 +69,47 @@ export class UpdateStatusDto {
   @ApiProperty({ enum: ['Saved', 'Applied', 'Screening', 'Interviewing', 'Offer', 'Accepted', 'Declined', 'Rejected', 'Closed'] })
   status!: string;
 }
+
+export class ImportApplicationDto {
+  @ApiProperty()
+  sourceUrl!: string;
+
+  @ApiProperty()
+  companyName!: string;
+
+  @ApiPropertyOptional()
+  companyDomain?: string;
+
+  @ApiPropertyOptional()
+  companyDescription?: string;
+
+  @ApiProperty()
+  jobTitle!: string;
+
+  @ApiPropertyOptional()
+  jobDescription?: string;
+
+  @ApiPropertyOptional()
+  jobLocation?: string;
+
+  @ApiPropertyOptional()
+  salaryMin?: number;
+
+  @ApiPropertyOptional()
+  salaryMax?: number;
+
+  @ApiPropertyOptional()
+  salaryCurrency?: string;
+
+  @ApiPropertyOptional()
+  jobType?: string;
+
+  @ApiPropertyOptional({ isArray: true, type: String })
+  keywords?: string[];
+
+  @ApiPropertyOptional()
+  applicationDeadline?: string;
+
+  @ApiProperty({ default: 'browser_extension' })
+  source!: string;
+}
