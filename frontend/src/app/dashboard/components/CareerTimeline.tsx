@@ -147,17 +147,31 @@ const iconMap: Record<string, typeof CheckIcon> = {
 interface Application {
   id: string;
   status: string;
-  companyName?: string;
-  jobTitle?: string;
+  companyName?: string | null;
+  jobTitle?: string | null;
   createdAt: string;
 }
 
 interface CareerTimelineProps {
   isEmpty?: boolean;
   applications?: Application[];
+  loading?: boolean;
 }
 
-export function CareerTimeline({ isEmpty, applications = [] }: CareerTimelineProps) {
+export function CareerTimeline({ isEmpty, applications = [], loading }: CareerTimelineProps) {
+  if (loading) {
+    return (
+      <div>
+        <SectionHead>
+          <SectionTitle>Career Activity</SectionTitle>
+        </SectionHead>
+        <TimelineCard style={{ padding: 32, textAlign: 'center' }}>
+          <p style={{ color: '#6B7A9E', fontSize: 13, margin: 0 }}>Building your career timeline...</p>
+        </TimelineCard>
+      </div>
+    );
+  }
+
   if (isEmpty || applications.length === 0) {
     return (
       <div>

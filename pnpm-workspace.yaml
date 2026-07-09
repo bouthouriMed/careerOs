@@ -1,6 +1,7 @@
 packages:
   - "frontend"
   - "backend"
+  - "frontend/extension"
 allowBuilds:
   '@nestjs/core': true
   '@prisma/client': true

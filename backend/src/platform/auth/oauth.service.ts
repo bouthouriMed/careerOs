@@ -1,5 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { TokenService } from './token.service';
 import { authConfig } from '../config/auth.config';
 
 interface GoogleProfile {
@@ -9,11 +10,20 @@ interface GoogleProfile {
   picture: string;
 }
 
+interface TokenResponse {
+  access_token: string;
+  refresh_token?: string;
+  expires_in?: number;
+}
+
 @Injectable()
 export class OAuthService {
   private readonly config = authConfig();
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly tokenService: TokenService,
+  ) {}
 
   generateAuthUrl(): string {
     const params = new URLSearchParams({
@@ -32,7 +42,7 @@ export class OAuthService {
     const tokens = await this.exchangeCodeForTokens(code);
     const profile = await this.getGoogleProfile(tokens.access_token);
 
-    const user = await this.findOrCreateUser(profile);
+    const user = await this.findOrCreateUser(profile, tokens);
 
     return {
       id: user.id,
@@ -42,7 +52,7 @@ export class OAuthService {
     };
   }
 
-  private async exchangeCodeForTokens(code: string): Promise<{ access_token: string; refresh_token?: string }> {
+  private async exchangeCodeForTokens(code: string): Promise<TokenResponse> {
     const response = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -59,11 +69,7 @@ export class OAuthService {
       throw new UnauthorizedException('Failed to exchange authorization code');
     }
 
-    const data = await response.json();
-    return {
-      access_token: data.access_token,
-      refresh_token: data.refresh_token,
-    };
+    return response.json();
   }
 
   private async getGoogleProfile(accessToken: string): Promise<GoogleProfile> {
@@ -79,27 +85,37 @@ export class OAuthService {
     return response.json();
   }
 
-  private async findOrCreateUser(profile: GoogleProfile) {
+  private async findOrCreateUser(profile: GoogleProfile, tokens: TokenResponse) {
     let user = await this.prisma.user.findUnique({
       where: { googleId: profile.id },
     });
 
+    const expiresAt = tokens.expires_in
+      ? new Date(Date.now() + tokens.expires_in * 1000)
+      : null;
+
+    const data = {
+      email: profile.email,
+      name: profile.name,
+      avatar: profile.picture,
+      googleAccessToken: this.tokenService.encrypt(tokens.access_token),
+      googleTokenExpiresAt: expiresAt,
+    };
+
+    if (tokens.refresh_token) {
+      (data as Record<string, unknown>).googleRefreshToken = this.tokenService.encrypt(tokens.refresh_token);
+    }
+
     if (user) {
       user = await this.prisma.user.update({
         where: { id: user.id },
-        data: {
-          email: profile.email,
-          name: profile.name,
-          avatar: profile.picture,
-        },
+        data,
       });
     } else {
       user = await this.prisma.user.create({
         data: {
           googleId: profile.id,
-          email: profile.email,
-          name: profile.name,
-          avatar: profile.picture,
+          ...data,
         },
       });
     }

@@ -7,15 +7,51 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum ApplicationStatus {
+  Saved
+  Applied
+  Screening
+  Interviewing
+  Offer
+  Accepted
+  Declined
+  Rejected
+  Closed
+}
+
+enum InterviewStatus {
+  Scheduled
+  Completed
+  Cancelled
+  FeedbackReceived
+}
+
+enum InterviewType {
+  Phone
+  Video
+  Onsite
+  Technical
+  TakeHome
+  Final
+  Other
+}
+
 model User {
   id        String    @id @default(cuid())
   email     String    @unique
   name      String?
   avatar    String?
   googleId  String    @unique
+  googleAccessToken   String?
+  googleRefreshToken  String?
+  googleTokenExpiresAt DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   sessions  Session[]
+  syncState EmailSyncState?
+  applications Application[]
+  careerMemories CareerMemory[]
+  intelligenceArtifacts IntelligenceArtifact[]
 }
 
 model Session {
@@ -28,4 +64,163 @@ model Session {
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+model EmailSyncState {
+  id                 String    @id @default(cuid())
+  userId             String    @unique
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status             String    @default("never_synced")
+  emailsScanned      Int       @default(0)
+  applicationsDetected Int     @default(0)
+  startedAt          DateTime?
+  completedAt        DateTime?
+  errorMessage       String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model Company {
+  id          String   @id @default(cuid())
+  name        String
+  domain      String?
+  description String?
+  logoUrl     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  jobs        Job[]
+  recruiters  Recruiter[]
+  applications Application[]
+
+  @@index([domain])
+  @@index([name])
+}
+
+model Job {
+  id          String   @id @default(cuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  location    String?
+  salaryMin   Int?
+  salaryMax   Int?
+  currency    String?
+  keywords    String[]
+  url         String?
+  source      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  applications Application[]
+
+  @@index([companyId])
+  @@index([title])
+}
+
+model Recruiter {
+  id          String   @id @default(cuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name        String
+  email       String?
+  phone       String?
+  linkedinUrl String?
+  avatarUrl   String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  applicationContacts ApplicationContact[]
+
+  @@index([companyId])
+  @@index([email])
+}
+
+model Application {
+  id        String            @id @default(cuid())
+  userId    String
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyId String
+  company   Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  jobId     String?
+  job       Job?              @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  status    ApplicationStatus @default(Saved)
+  appliedAt DateTime?
+  source    String?
+  notes     String?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  interviews Interview[]
+  contacts  ApplicationContact[]
+  artifacts IntelligenceArtifact[]
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([status])
+  @@index([userId, status])
+}
+
+model Interview {
+  id              String          @id @default(cuid())
+  applicationId   String
+  application     Application     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  round           String?
+  type            InterviewType   @default(Video)
+  scheduledAt     DateTime
+  durationMinutes Int?
+  location        String?
+  meetingUrl      String?
+  status          InterviewStatus @default(Scheduled)
+  feedback        String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([applicationId])
+  @@index([scheduledAt])
+}
+
+model ApplicationContact {
+  id           String    @id @default(cuid())
+  applicationId String
+  application  Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  recruiterId  String
+  recruiter    Recruiter @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
+  role         String    @default("recruiter")
+  createdAt    DateTime  @default(now())
+
+  @@unique([applicationId, recruiterId])
+  @@index([applicationId])
+  @@index([recruiterId])
+}
+
+model IntelligenceArtifact {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applicationId String?
+  application   Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  type          String
+  objective     String?
+  data          Json
+  confidence    Float?
+  sourceEvent   String?
+  sourceEmailId String?
+  version       Int      @default(1)
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([applicationId])
+  @@index([type])
+}
+
+model CareerMemory {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key       String
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, key])
+  @@index([userId])
 }

@@ -8,6 +8,8 @@ export function validateEnvironment(config: Record<string, unknown>) {
     'ENCRYPTION_KEY',
   ];
 
+  const optional = ['AI_PROVIDER', 'OPENAI_API_KEY'];
+
   const missing = required.filter((key) => !config[key]);
 
   if (missing.length > 0) {
