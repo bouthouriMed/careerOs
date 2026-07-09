@@ -132,13 +132,14 @@ const columns = [
 interface Application {
   id: string;
   status: string;
-  companyName?: string;
-  jobTitle?: string;
+  companyName?: string | null;
+  jobTitle?: string | null;
   createdAt: string;
 }
 
 interface PipelineProps {
   applications?: Application[];
+  loading?: boolean;
 }
 
 function getInitials(name: string): string {
@@ -149,7 +150,7 @@ function getStatusGroup(status: string): string {
   const s = status.toLowerCase();
   if (s === 'saved') return 'saved';
   if (s === 'applied') return 'applied';
-  if (s === 'interview') return 'interview';
+  if (s === 'interviewing' || s === 'interview') return 'interview';
   if (s === 'offer') return 'offer';
   if (s === 'rejected') return 'rejected';
   return 'applied';
@@ -166,7 +167,26 @@ function timeAgo(dateStr: string): string {
   return `${weeks}w ago`;
 }
 
-export function Pipeline({ applications = [] }: PipelineProps) {
+const LoadingCard = styled.div`
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  div {
+    height: 10px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.04);
+  }
+
+  .w1 { width: 60%; }
+  .w2 { width: 80%; }
+`;
+
+export function Pipeline({ applications = [], loading }: PipelineProps) {
   const grouped = columns.map(col => ({
     ...col,
     apps: applications.filter(a => getStatusGroup(a.status) === col.key),
@@ -176,6 +196,25 @@ export function Pipeline({ applications = [] }: PipelineProps) {
     <Grid>
       {grouped.map((col) => {
         const cards = col.apps;
+        if (loading) {
+          return (
+            <Column key={col.key}>
+              <ColHead>
+                <ColLabel $color={col.color}>{col.label}</ColLabel>
+                <ColCount $bg={col.bg} $color={col.color}>0</ColCount>
+              </ColHead>
+              {[0, 1, 2].map((i) => (
+                <LoadingCard key={i}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 20, height: 20, borderRadius: 6, flexShrink: 0 }} />
+                    <div className="w1" />
+                  </div>
+                  <div className="w2" />
+                </LoadingCard>
+              ))}
+            </Column>
+          );
+        }
         return (
           <Column key={col.key}>
             <ColHead>

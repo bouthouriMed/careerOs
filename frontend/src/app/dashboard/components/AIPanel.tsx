@@ -183,8 +183,8 @@ const IvInfo = styled.div`
 interface Application {
   id: string;
   status: string;
-  companyName?: string;
-  jobTitle?: string;
+  companyName?: string | null;
+  jobTitle?: string | null;
   createdAt: string;
 }
 

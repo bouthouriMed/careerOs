@@ -1,7 +1,7 @@
 'use client';
 
 import styled from 'styled-components';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/platform/auth/hooks/use-auth';
 
@@ -158,6 +158,34 @@ const UserRole = styled.div`
   color: ${({ theme }) => theme.colors.dim};
 `;
 
+const BottomSection = styled.div`
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`;
+
+const LogoutButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #6B7A9E;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: #F87171;
+  }
+`;
+
 const NAV_ITEMS: Array<{ href: string; label: string; icon: string; badge?: string }> = [
   { href: '/dashboard', label: 'Dashboard', icon: 'grid' },
   { href: '/applications', label: 'Applications', icon: 'file', badge: '12' },
@@ -216,9 +244,19 @@ const iconMap: Record<string, typeof GridIcon> = {
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const router = useRouter();
+  const { user, logout } = useAuth();
   const name = user?.name || 'User';
   const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'U';
+
+  const handleLogout = async () => {
+    try {
+      await logout().unwrap();
+    } catch {
+      // proceed with redirect even if logout API fails
+    }
+    router.replace('/');
+  };
 
   return (
     <Aside>
@@ -252,16 +290,24 @@ export function Sidebar() {
         })}
       </Nav>
 
-      <UserCard>
-        <UserAvatar>{initials}</UserAvatar>
-        <UserInfo>
-          <UserName>{name}</UserName>
-          <UserRole>Job Seeker</UserRole>
-        </UserInfo>
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6B7A9E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="3" /><path d="M19.07 4.93l-1.41 1.41M5.34 18.66l-1.41 1.41M19.07 19.07l-1.41-1.41M5.34 5.34L3.93 3.93M22 12h-2M4 12H2M19.07 4.93A10 10 0 014.93 19.07M19.07 19.07A10 10 0 014.93 4.93" />
-        </svg>
-      </UserCard>
+      <BottomSection>
+        <UserCard>
+          <UserAvatar>{initials}</UserAvatar>
+          <UserInfo>
+            <UserName>{name}</UserName>
+            <UserRole>Job Seeker</UserRole>
+          </UserInfo>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6B7A9E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="3" /><path d="M19.07 4.93l-1.41 1.41M5.34 18.66l-1.41 1.41M19.07 19.07l-1.41-1.41M5.34 5.34L3.93 3.93M22 12h-2M4 12H2M19.07 4.93A10 10 0 014.93 19.07M19.07 19.07A10 10 0 014.93 4.93" />
+          </svg>
+        </UserCard>
+        <LogoutButton onClick={handleLogout}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          Sign out
+        </LogoutButton>
+      </BottomSection>
     </Aside>
   );
 }

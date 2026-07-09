@@ -138,9 +138,11 @@ function NetSvg() {
 
 interface HeroFocusProps {
   isEmpty?: boolean;
+  syncEmailsScanned?: number;
+  syncAppsDetected?: number;
 }
 
-export function HeroFocus({ isEmpty }: HeroFocusProps) {
+export function HeroFocus({ isEmpty, syncEmailsScanned }: HeroFocusProps) {
   const { user } = useAuth();
   const firstName = user?.name?.split(' ')[0] || 'there';
 
@@ -157,7 +159,12 @@ export function HeroFocus({ isEmpty }: HeroFocusProps) {
           </svg>
           AI Focus Mode
         </Tag>
-        {isEmpty ? (
+        {isEmpty && syncEmailsScanned !== undefined ? (
+          <>
+            <Title>Welcome to CareerOS</Title>
+            <Summary>We are scanning your inbox and organizing your career. {syncEmailsScanned} emails found so far — your applications will appear here automatically.</Summary>
+          </>
+        ) : isEmpty ? (
           <>
             <Title>Welcome to CareerOS</Title>
             <Summary>We are organizing your career and preparing personalized insights.</Summary>
@@ -165,7 +172,7 @@ export function HeroFocus({ isEmpty }: HeroFocusProps) {
         ) : (
           <>
             <Title>Strong momentum this week, {firstName}.</Title>
-            <Summary>You have a Figma interview tomorrow and 3 applications awaiting response. Your career score rose 4 points — you are in the top 15% of active candidates.</Summary>
+            <Summary>You have applications in progress and your career is being tracked automatically.</Summary>
             <Actions>
               <BtnGhost href="#">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
