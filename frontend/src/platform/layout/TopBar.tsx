@@ -9,8 +9,8 @@ const StyledHeader = styled.header`
   gap: 16px;
   padding: 14px 24px;
   flex-shrink: 0;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-  background: rgba(13,17,23,0.85);
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
+  background: ${({ theme }) => theme.colors.sidebarBg}dd;
   backdrop-filter: blur(12px);
 `;
 
@@ -21,13 +21,13 @@ const GreetingSection = styled.div`
 const GreetingText = styled.h1`
   font-size: 15px;
   font-weight: 700;
-  color: ${({ theme }) => theme.colors.textDark};
+  color: ${({ theme }) => theme.colors.text};
   margin: 0;
 `;
 
 const GreetingSub = styled.p`
   font-size: 11px;
-  color: ${({ theme }) => theme.colors.dim};
+  color: ${({ theme }) => theme.colors.textMuted};
   margin: 0;
   margin-top: 1px;
 `;
@@ -40,8 +40,8 @@ const SearchBar = styled.div`
   border-radius: 12px;
   flex: 1;
   max-width: 340px;
-  background: ${({ theme }) => theme.colors.card};
-  border: 1px solid ${({ theme }) => theme.colors.borderDark};
+  background: ${({ theme }) => theme.colors.cardBg};
+  border: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
 const SearchInput = styled.input`
@@ -50,11 +50,11 @@ const SearchInput = styled.input`
   outline: none;
   font-family: ${({ theme }) => theme.typography.fontFamily};
   font-size: 12px;
-  color: ${({ theme }) => theme.colors.textDark};
+  color: ${({ theme }) => theme.colors.text};
   flex: 1;
 
   &::placeholder {
-    color: ${({ theme }) => theme.colors.dim};
+    color: ${({ theme }) => theme.colors.textMuted};
   }
 `;
 
@@ -63,8 +63,8 @@ const Kbd = styled.span`
   font-size: 10px;
   padding: 2px 6px;
   border-radius: 5px;
-  background: rgba(255,255,255,0.06);
-  color: ${({ theme }) => theme.colors.dim};
+  background: ${({ theme }) => theme.colors.borderLight};
+  color: ${({ theme }) => theme.colors.textMuted};
 `;
 
 const Actions = styled.div`
@@ -82,12 +82,12 @@ const IconBtn = styled.div`
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  background: ${({ theme }) => theme.colors.card};
-  border: 1px solid ${({ theme }) => theme.colors.borderDark};
+  background: ${({ theme }) => theme.colors.cardBg};
+  border: 1px solid ${({ theme }) => theme.colors.border};
   transition: background 0.15s;
 
   &:hover {
-    background: ${({ theme }) => theme.colors.card2};
+    background: ${({ theme }) => theme.colors.cardBg2};
   }
 `;
 
@@ -98,8 +98,8 @@ const NotifDot = styled.div`
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: ${({ theme }) => theme.colors.blue};
-  border: 1.5px solid #090C14;
+  background: ${({ theme }) => theme.colors.primary};
+  border: 1.5px solid ${({ theme }) => theme.colors.sidebarBg};
 `;
 
 const Avatar = styled.div`
@@ -107,7 +107,7 @@ const Avatar = styled.div`
   height: 36px;
   border-radius: 10px;
   cursor: pointer;
-  background: linear-gradient(135deg, #4F8EF7, #A78BFA);
+  background: linear-gradient(135deg, ${({ theme }) => theme.colors.primary}, #A78BFA);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -139,21 +139,21 @@ export function TopBar() {
   return (
     <StyledHeader>
       <GreetingSection>
-        <GreetingText>{getGreeting()}, {name} 👋</GreetingText>
+        <GreetingText>{getGreeting()}, {name}</GreetingText>
         <GreetingSub>{formatDate()} · 3 actions need your attention</GreetingSub>
       </GreetingSection>
 
       <SearchBar>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B7A9E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
-        <SearchInput type="text" placeholder="Search roles, companies, docs…" />
+        <SearchInput type="text" placeholder="Search roles, companies, docs..." />
         <Kbd>⌘K</Kbd>
       </SearchBar>
 
       <Actions>
         <IconBtn>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A8B3CF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 01-3.46 0" />
           </svg>
           <NotifDot />

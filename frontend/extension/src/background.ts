@@ -1,5 +1,14 @@
 const API = 'http://localhost:4000';
 
+async function getSessionCookie(): Promise<string | null> {
+  try {
+    const cookie = await chrome.cookies.get({ url: API, name: 'session' });
+    return cookie?.value ?? null;
+  } catch {
+    return null;
+  }
+}
+
 chrome.runtime.onInstalled.addListener(() => {
   console.log('CareerOS extension installed');
 });
@@ -25,11 +34,17 @@ chrome.runtime.onMessage.addListener(
         if (key in message.data) payload[key] = message.data[key];
       }
       if (!payload.source) payload.source = 'browser_extension';
-      fetch(`${API}/applications/import`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+
+      getSessionCookie().then((sessionId) => {
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (sessionId) headers.Cookie = `session=${sessionId}`;
+
+        return fetch(`${API}/applications/import`, {
+          method: 'POST',
+          credentials: 'include',
+          headers,
+          body: JSON.stringify(payload),
+        });
       })
         .then((r) => {
           if (!r.ok) throw new Error(`HTTP ${r.status}`);

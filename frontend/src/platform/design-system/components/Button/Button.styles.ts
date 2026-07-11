@@ -1,38 +1,38 @@
 import styled, { css } from 'styled-components';
-import { Theme } from '../../theme/light-theme';
+import { AppTheme } from '../../theme/tokens';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type Size = 'sm' | 'md' | 'lg';
 
-const variantStyles = (theme: Theme, variant: Variant) => {
+const variantStyles = (theme: AppTheme, variant: Variant) => {
   const variants = {
     primary: css`
       background: ${theme.colors.primary};
-      color: ${theme.colors.textInverse};
+      color: white;
       border: none;
       &:hover:not(:disabled) {
-        background: ${theme.colors.primaryHover};
+        opacity: 0.9;
       }
     `,
     secondary: css`
-      background: ${theme.colors.secondary};
-      color: ${theme.colors.textInverse};
+      background: ${theme.colors.textSecondary};
+      color: white;
       border: none;
       &:hover:not(:disabled) {
-        background: ${theme.colors.secondaryHover};
+        opacity: 0.9;
       }
     `,
     ghost: css`
-      background: ${theme.colors.ghost};
+      background: transparent;
       color: ${theme.colors.text};
       border: 1px solid ${theme.colors.border};
       &:hover:not(:disabled) {
-        background: ${theme.colors.ghostHover};
+        background: ${theme.colors.surfaceHover};
       }
     `,
     danger: css`
       background: ${theme.colors.error};
-      color: ${theme.colors.textInverse};
+      color: white;
       border: none;
       &:hover:not(:disabled) {
         opacity: 0.9;
@@ -46,15 +46,15 @@ const sizeStyles = (size: Size) => {
   const sizes = {
     sm: css`
       padding: 6px 12px;
-      font-size: ${({ theme }: { theme: Theme }) => theme.typography.sizes.xs};
+      font-size: ${({ theme }: { theme: AppTheme }) => theme.typography.sizes.xs};
     `,
     md: css`
       padding: 8px 16px;
-      font-size: ${({ theme }: { theme: Theme }) => theme.typography.sizes.sm};
+      font-size: ${({ theme }: { theme: AppTheme }) => theme.typography.sizes.sm};
     `,
     lg: css`
       padding: 12px 24px;
-      font-size: ${({ theme }: { theme: Theme }) => theme.typography.sizes.md};
+      font-size: ${({ theme }: { theme: AppTheme }) => theme.typography.sizes.md};
     `,
   };
   return sizes[size];

@@ -7,6 +7,7 @@ const baseApi = createApi({
     credentials: 'include',
   }),
   tagTypes: ['User'],
+  refetchOnMountOrArgChange: true,
   endpoints: () => ({}),
 });
 

@@ -53,7 +53,7 @@ export class EmailSyncService {
       },
     });
 
-    this.eventBus.publish('email.sync.started', { userId });
+    await this.eventBus.publish('email.sync.started', { userId });
 
     return this.getStatus(userId);
   }
@@ -81,6 +81,7 @@ export class EmailSyncService {
       data: {
         status: 'completed',
         completedAt: new Date(),
+        lastSyncedAt: new Date(),
       },
     });
   }

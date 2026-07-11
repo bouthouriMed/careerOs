@@ -1,3 +1,4 @@
 #!/bin/sh
 set -e
-exec node backend/dist/main
+cd /app/backend && npx prisma db push --skip-generate 2>/dev/null || true
+exec node dist/main

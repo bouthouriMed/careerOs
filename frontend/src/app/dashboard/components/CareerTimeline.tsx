@@ -1,22 +1,23 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import styled from 'styled-components';
 
 const TimelineCard = styled.div`
-  background: ${({ theme }) => theme.colors.card};
-  border: 1px solid ${({ theme }) => theme.colors.borderDark};
-  border-radius: 20px;
+  background: ${({ theme }) => theme.colors.cardBg};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 14px;
   overflow: hidden;
 `;
 
-const Row = styled.div`
+const RowLink = styled(Link)`
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
-  cursor: pointer;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
+  text-decoration: none;
+  color: inherit;
   transition: background 0.1s;
 
   &:last-child {
@@ -24,7 +25,7 @@ const Row = styled.div`
   }
 
   &:hover {
-    background: rgba(255,255,255,0.02);
+    background: ${({ theme }) => theme.colors.surfaceHover};
   }
 `;
 
@@ -47,7 +48,7 @@ const Top = styled.div`
 const Type = styled.span`
   font-size: 12px;
   font-weight: 600;
-  color: ${({ theme }) => theme.colors.textDark};
+  color: ${({ theme }) => theme.colors.text};
 `;
 
 const Chip = styled.span`
@@ -55,19 +56,19 @@ const Chip = styled.span`
   font-weight: 500;
   padding: 2px 6px;
   border-radius: 5px;
-  background: rgba(255,255,255,0.06);
-  color: ${({ theme }) => theme.colors.dim};
+  background: ${({ theme }) => theme.colors.borderLight};
+  color: ${({ theme }) => theme.colors.textSecondary};
 `;
 
 const RoleLine = styled.div`
   font-size: 11px;
-  color: ${({ theme }) => theme.colors.dim};
+  color: ${({ theme }) => theme.colors.textSecondary};
   margin-top: 2px;
 `;
 
 const Time = styled.span`
   font-size: 11px;
-  color: ${({ theme }) => theme.colors.dim};
+  color: ${({ theme }) => theme.colors.textMuted};
   flex-shrink: 0;
 `;
 
@@ -79,19 +80,23 @@ const SectionHead = styled.div`
 `;
 
 const SectionTitle = styled.h3`
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
-  color: ${({ theme }) => theme.colors.textDark};
+  color: ${({ theme }) => theme.colors.text};
   margin: 0;
 `;
 
-const ViewAll = styled.a`
-  font-size: 11px;
-  color: ${({ theme }) => theme.colors.blue};
+const ViewAllLink = styled(Link)`
+  font-size: 12px;
+  color: ${({ theme }) => theme.colors.textSecondary};
   text-decoration: none;
   display: flex;
   align-items: center;
   gap: 4px;
+
+  &:hover {
+    color: ${({ theme }) => theme.colors.text};
+  }
 `;
 
 function getStatusIcon(status: string): { icon: 'check' | 'circle' | 'star'; color: string; label: string } {
@@ -160,7 +165,6 @@ interface CareerTimelineProps {
 }
 
 export function CareerTimeline({ isEmpty, applications = [], loading }: CareerTimelineProps) {
-  const router = useRouter();
   if (loading) {
     return (
       <div>
@@ -193,19 +197,19 @@ export function CareerTimeline({ isEmpty, applications = [], loading }: CareerTi
     <div>
       <SectionHead>
         <SectionTitle>Career Activity</SectionTitle>
-        <ViewAll href="/applications" onClick={(e) => { e.preventDefault(); router.push('/applications'); }}>
+        <ViewAllLink href="/applications">
           View all
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="9 18 15 12 9 6" />
           </svg>
-        </ViewAll>
+        </ViewAllLink>
       </SectionHead>
       <TimelineCard>
-        {sorted.slice(0, 10).map((app) => {
+        {sorted.slice(0, 3).map((app) => {
           const { icon, color, label } = getStatusIcon(app.status);
           const Icon = iconMap[icon];
           return (
-            <Row key={app.id} onClick={() => router.push(`/applications?id=${app.id}`)}>
+            <RowLink key={app.id} href={`/applications?id=${app.id}`}>
               <IconWrap><Icon color={color} /></IconWrap>
               <Body>
                 <Top>
@@ -215,7 +219,7 @@ export function CareerTimeline({ isEmpty, applications = [], loading }: CareerTi
                 <RoleLine>{app.jobTitle || 'Application'}</RoleLine>
               </Body>
               <Time>{timeAgo(app.createdAt)}</Time>
-            </Row>
+            </RowLink>
           );
         })}
       </TimelineCard>

@@ -1,37 +1,80 @@
-export const tokens = {
+export interface AppTheme {
   colors: {
-    primary: '#2563EB',
-    primaryHover: '#1D4ED8',
-    secondary: '#64748B',
-    secondaryHover: '#475569',
-    success: '#16A34A',
-    warning: '#D97706',
-    error: '#DC2626',
-    ghost: 'transparent',
-    ghostHover: '#F1F5F9',
-    background: '#FFFFFF',
-    surface: '#F8FAFC',
-    border: '#E2E8F0',
-    charcoal: '#1A1A1A',
-    text: '#0F172A',
-    textSecondary: '#64748B',
-    textInverse: '#FFFFFF',
+    bg: string;
+    sidebarBg: string;
+    cardBg: string;
+    cardBg2: string;
+    panelBg: string;
+    border: string;
+    borderLight: string;
+    text: string;
+    textSecondary: string;
+    textMuted: string;
+    accent: string;
+    accentMuted: string;
+    accentHover: string;
+    primary: string;
+    primaryMuted: string;
+    success: string;
+    warning: string;
+    error: string;
+    purple: string;
+    purpleMuted: string;
+    orange: string;
+    orangeMuted: string;
+    surfaceHover: string;
+    scrollbarThumb: string;
+    scrollbarThumbHover: string;
+  };
+  spacing: {
+    xs: string;
+    sm: string;
+    md: string;
+    lg: string;
+    xl: string;
+    xxl: string;
+  };
+  typography: {
+    fontFamily: string;
+    fontMono: string;
+    sizes: {
+      xs: string;
+      sm: string;
+      md: string;
+      lg: string;
+      xl: string;
+      xxl: string;
+    };
+    weights: {
+      normal: number;
+      medium: number;
+      semibold: number;
+      bold: number;
+    };
+  };
+  borderRadius: {
+    sm: string;
+    md: string;
+    lg: string;
+    xl: string;
+    xxl: string;
+    full: string;
+  };
+  shadows: {
+    sm: string;
+    md: string;
+    lg: string;
+  };
+  breakpoints: {
+    sm: string;
+    md: string;
+    lg: string;
+    xl: string;
+    xxl: string;
+  };
+}
 
-    bg: '#0D1117',
-    sidebar: '#090C14',
-    card: '#141925',
-    card2: '#1C2333',
-    borderDark: 'rgba(255,255,255,0.07)',
-    borderDark2: 'rgba(255,255,255,0.05)',
-    textDark: '#E8EBF4',
-    muted: '#A8B3CF',
-    dim: '#6B7A9E',
-    blue: '#4F8EF7',
-    purple: '#A78BFA',
-    green: '#34D399',
-    amber: '#F59E0B',
-    red: '#F87171',
-  },
+export const sharedTokens = {
   spacing: {
     xs: '4px',
     sm: '8px',
@@ -78,4 +121,70 @@ export const tokens = {
     xl: '1280px',
     xxl: '1600px',
   },
-} as const;
+};
+
+export const darkColors: AppTheme['colors'] = {
+  bg: '#06080a',
+  sidebarBg: '#090C14',
+  cardBg: '#10141d',
+  cardBg2: '#141925',
+  panelBg: '#06080a',
+  border: '#1a1f2c',
+  borderLight: 'rgba(255, 255, 255, 0.05)',
+  text: '#ffffff',
+  textSecondary: '#8591a3',
+  textMuted: '#4d5765',
+  accent: '#00ca72',
+  accentMuted: 'rgba(0, 202, 114, 0.08)',
+  accentHover: '#00e884',
+  primary: '#4F8EF7',
+  primaryMuted: 'rgba(79, 142, 247, 0.12)',
+  success: '#00ca72',
+  warning: '#f97316',
+  error: '#f87171',
+  purple: '#a855f7',
+  purpleMuted: 'rgba(168, 85, 247, 0.12)',
+  orange: '#f97316',
+  orangeMuted: 'rgba(249, 115, 22, 0.08)',
+  surfaceHover: 'rgba(255, 255, 255, 0.04)',
+  scrollbarThumb: 'rgba(255, 255, 255, 0.08)',
+  scrollbarThumbHover: 'rgba(255, 255, 255, 0.12)',
+};
+
+export const lightColors: AppTheme['colors'] = {
+  bg: '#f0f2f5',
+  sidebarBg: '#ffffff',
+  cardBg: '#ffffff',
+  cardBg2: '#f8fafc',
+  panelBg: '#f8fafc',
+  border: '#e2e8f0',
+  borderLight: 'rgba(0, 0, 0, 0.06)',
+  text: '#0f172a',
+  textSecondary: '#64748b',
+  textMuted: '#94a3b8',
+  accent: '#059669',
+  accentMuted: 'rgba(5, 150, 105, 0.08)',
+  accentHover: '#047857',
+  primary: '#2563EB',
+  primaryMuted: 'rgba(37, 99, 235, 0.10)',
+  success: '#059669',
+  warning: '#d97706',
+  error: '#dc2626',
+  purple: '#7c3aed',
+  purpleMuted: 'rgba(124, 58, 237, 0.08)',
+  orange: '#ea580c',
+  orangeMuted: 'rgba(234, 88, 12, 0.06)',
+  surfaceHover: 'rgba(0, 0, 0, 0.03)',
+  scrollbarThumb: 'rgba(0, 0, 0, 0.12)',
+  scrollbarThumbHover: 'rgba(0, 0, 0, 0.2)',
+};
+
+export const darkTheme: AppTheme = {
+  colors: darkColors,
+  ...sharedTokens,
+};
+
+export const lightTheme: AppTheme = {
+  colors: lightColors,
+  ...sharedTokens,
+};

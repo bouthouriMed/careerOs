@@ -8,6 +8,7 @@ export const addTagTypes = [
   'Recruiters',
   'Applications',
   'Interviews',
+  'Signals',
 ] as const;
 const injectedRtkApi = api
   .enhanceEndpoints({
@@ -136,9 +137,9 @@ const injectedRtkApi = api
         }),
         invalidatesTags: ['Applications'],
       }),
-      interviewControllerFindByApplication: build.query<
-        InterviewControllerFindByApplicationResponse,
-        InterviewControllerFindByApplicationArg
+      interviewControllerFind: build.query<
+        InterviewControllerFindResponse,
+        InterviewControllerFindArg
       >({
         query: (queryArg) => ({ url: `/interviews`, params: { applicationId: queryArg } }),
         providesTags: ['Interviews'],
@@ -160,6 +161,48 @@ const injectedRtkApi = api
           body: queryArg.updateInterviewStatusDto,
         }),
         invalidatesTags: ['Interviews'],
+      }),
+      signalControllerFindAll: build.query<
+        SignalControllerFindAllResponse,
+        SignalControllerFindAllArg
+      >({
+        query: (queryArg) => ({ url: `/signals`, params: { status: queryArg } }),
+        providesTags: ['Signals'],
+      }),
+      signalControllerFindActive: build.query<
+        SignalControllerFindActiveResponse,
+        SignalControllerFindActiveArg
+      >({
+        query: () => ({ url: `/signals/active` }),
+        providesTags: ['Signals'],
+      }),
+      signalControllerGetStats: build.query<
+        SignalControllerGetStatsResponse,
+        SignalControllerGetStatsArg
+      >({
+        query: () => ({ url: `/signals/stats` }),
+        providesTags: ['Signals'],
+      }),
+      signalControllerFindById: build.query<
+        SignalControllerFindByIdResponse,
+        SignalControllerFindByIdArg
+      >({
+        query: (queryArg) => ({ url: `/signals/${queryArg}` }),
+        providesTags: ['Signals'],
+      }),
+      signalControllerDismiss: build.mutation<
+        SignalControllerDismissResponse,
+        SignalControllerDismissArg
+      >({
+        query: (queryArg) => ({ url: `/signals/${queryArg}/dismiss`, method: 'PATCH' }),
+        invalidatesTags: ['Signals'],
+      }),
+      signalControllerComplete: build.mutation<
+        SignalControllerCompleteResponse,
+        SignalControllerCompleteArg
+      >({
+        query: (queryArg) => ({ url: `/signals/${queryArg}/complete`, method: 'PATCH' }),
+        invalidatesTags: ['Signals'],
       }),
     }),
     overrideExisting: false,
@@ -204,8 +247,8 @@ export type ApplicationControllerUpdateStatusArg = {
   id: string;
   updateStatusDto: UpdateStatusDto;
 };
-export type InterviewControllerFindByApplicationResponse = /** status 200  */ object[];
-export type InterviewControllerFindByApplicationArg = string;
+export type InterviewControllerFindResponse = /** status 200  */ object[];
+export type InterviewControllerFindArg = string;
 export type InterviewControllerCreateResponse = unknown;
 export type InterviewControllerCreateArg = CreateInterviewDto;
 export type InterviewControllerUpdateStatusResponse = unknown;
@@ -213,6 +256,18 @@ export type InterviewControllerUpdateStatusArg = {
   id: string;
   updateInterviewStatusDto: UpdateInterviewStatusDto;
 };
+export type SignalControllerFindAllResponse = /** status 200  */ SignalResponseDto[];
+export type SignalControllerFindAllArg = string;
+export type SignalControllerFindActiveResponse = /** status 200  */ SignalResponseDto[];
+export type SignalControllerFindActiveArg = void;
+export type SignalControllerGetStatsResponse = /** status 200  */ SignalStatsDto;
+export type SignalControllerGetStatsArg = void;
+export type SignalControllerFindByIdResponse = /** status 200  */ SignalResponseDto;
+export type SignalControllerFindByIdArg = string;
+export type SignalControllerDismissResponse = unknown;
+export type SignalControllerDismissArg = string;
+export type SignalControllerCompleteResponse = unknown;
+export type SignalControllerCompleteArg = string;
 export type SyncStatusResponseDto = {
   status: 'never_synced' | 'pending' | 'completed' | 'error';
   emailsScanned: number;
@@ -318,6 +373,26 @@ export type CreateInterviewDto = {
 export type UpdateInterviewStatusDto = {
   status: 'Scheduled' | 'Completed' | 'Cancelled' | 'FeedbackReceived';
 };
+export type SignalResponseDto = {
+  id: string;
+  type: string;
+  priority: string;
+  status: string;
+  title: string;
+  description: string;
+  confidence: number;
+  applicationId?: string;
+  companyId?: string;
+  surfaces: string[];
+  expiresAt?: string;
+  createdAt: string;
+};
+export type SignalStatsDto = {
+  total: number;
+  active: number;
+  byType: object;
+  byPriority: object;
+};
 export const {
   useAuthControllerGetGoogleAuthUrlQuery,
   useAuthControllerHandleGoogleCallbackQuery,
@@ -337,7 +412,13 @@ export const {
   useApplicationControllerGetTimelineQuery,
   useApplicationControllerFindByIdQuery,
   useApplicationControllerUpdateStatusMutation,
-  useInterviewControllerFindByApplicationQuery,
+  useInterviewControllerFindQuery,
   useInterviewControllerCreateMutation,
   useInterviewControllerUpdateStatusMutation,
+  useSignalControllerFindAllQuery,
+  useSignalControllerFindActiveQuery,
+  useSignalControllerGetStatsQuery,
+  useSignalControllerFindByIdQuery,
+  useSignalControllerDismissMutation,
+  useSignalControllerCompleteMutation,
 } = injectedRtkApi;

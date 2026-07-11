@@ -52,6 +52,7 @@ model User {
   applications Application[]
   careerMemories CareerMemory[]
   intelligenceArtifacts IntelligenceArtifact[]
+  careerSignals CareerSignal[]
 }
 
 model Session {
@@ -75,6 +76,7 @@ model EmailSyncState {
   applicationsDetected Int     @default(0)
   startedAt          DateTime?
   completedAt        DateTime?
+  lastSyncedAt       DateTime?
   errorMessage       String?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
@@ -91,6 +93,7 @@ model Company {
   jobs        Job[]
   recruiters  Recruiter[]
   applications Application[]
+  signals     CareerSignal[]
 
   @@index([domain])
   @@index([name])
@@ -152,6 +155,7 @@ model Application {
   interviews Interview[]
   contacts  ApplicationContact[]
   artifacts IntelligenceArtifact[]
+  signals   CareerSignal[]
 
   @@index([userId])
   @@index([companyId])
@@ -206,6 +210,7 @@ model IntelligenceArtifact {
   sourceEmailId String?
   version       Int      @default(1)
   createdAt     DateTime @default(now())
+  signals       CareerSignal[]
 
   @@index([userId])
   @@index([applicationId])
@@ -223,4 +228,56 @@ model CareerMemory {
 
   @@unique([userId, key])
   @@index([userId])
+}
+
+enum SignalType {
+  Reminder
+  Insight
+  Action
+  Alert
+}
+
+enum SignalPriority {
+  Low
+  Medium
+  High
+  Urgent
+}
+
+enum SignalStatus {
+  Active
+  Completed
+  Dismissed
+  Expired
+  Superseded
+}
+
+model CareerSignal {
+  id              String         @id @default(cuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            SignalType
+  priority        SignalPriority @default(Medium)
+  status          SignalStatus   @default(Active)
+  title           String
+  description     String
+  confidence      Float
+  sourceArtifactId String?
+  sourceArtifact  IntelligenceArtifact? @relation(fields: [sourceArtifactId], references: [id], onDelete: SetNull)
+  applicationId   String?
+  application     Application?   @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  companyId       String?
+  company         Company?       @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  surfaces        String[]
+  expiresAt       DateTime?
+  dismissedAt     DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([type])
+  @@index([userId, status])
+  @@index([expiresAt])
 }

@@ -12,7 +12,20 @@ interface ApplicationExtractedEvent {
   userId: string;
   sourceEmailId: string;
   result: ExtractionResult;
+  emailDate?: string;
 }
+
+const STATUS_ORDER: Record<string, number> = {
+  rejected: 5,
+  offer: 4,
+  interviewing: 3,
+  screening: 2,
+  applied: 1,
+  saved: 0,
+  accepted: 6,
+  declined: 5,
+  closed: 5,
+};
 
 @Injectable()
 export class ApplicationConsumer implements OnModuleInit {
@@ -32,7 +45,7 @@ export class ApplicationConsumer implements OnModuleInit {
   }
 
   private async handleApplicationExtracted(payload: Record<string, unknown>) {
-    const { userId, sourceEmailId, result } = payload as unknown as ApplicationExtractedEvent;
+    const { userId, sourceEmailId, result, emailDate } = payload as unknown as ApplicationExtractedEvent;
     const appData = result.application;
     const recruiterData = result.recruiter;
 
@@ -59,34 +72,37 @@ export class ApplicationConsumer implements OnModuleInit {
       jobId = job.id;
     }
 
-    const status = this.mapStatus(appData.status);
+    const newStatus = this.mapStatus(appData.status);
     const appliedAt = appData.appliedAt ? new Date(appData.appliedAt) : undefined;
+    const emailCreatedAt = emailDate ? new Date(emailDate) : undefined;
 
-    const existingApp = jobId
-      ? await this.prisma.application.findFirst({
-          where: { userId, companyId: company.id, jobId },
-          orderBy: { createdAt: 'desc' },
-        })
-      : null;
+    const existingApp = await this.findExistingApplication(userId, company.id, jobId);
 
     let app;
     if (existingApp) {
+      const currentStatusRank = STATUS_ORDER[existingApp.status.toLowerCase()] ?? 0;
+      const newStatusRank = STATUS_ORDER[newStatus.toLowerCase()] ?? 0;
+      const shouldUpgrade = newStatusRank >= currentStatusRank;
+
       app = await this.prisma.application.update({
         where: { id: existingApp.id },
         data: {
-          status,
+          ...(shouldUpgrade ? { status: newStatus } : {}),
           appliedAt: appliedAt || existingApp.appliedAt,
           notes: appData.notes || existingApp.notes,
         },
       });
     } else {
-      app = await this.applicationService.create({
-        userId,
-        companyId: company.id,
-        jobId,
-        status,
-        appliedAt,
-        source: 'email',
+      app = await this.prisma.application.create({
+        data: {
+          userId,
+          companyId: company.id,
+          jobId,
+          status: newStatus,
+          appliedAt,
+          source: 'email',
+          ...(emailCreatedAt ? { createdAt: emailCreatedAt } : {}),
+        },
       });
     }
 
@@ -145,6 +161,20 @@ export class ApplicationConsumer implements OnModuleInit {
         });
       }
     }
+  }
+
+  private async findExistingApplication(userId: string, companyId: string, jobId?: string) {
+    if (jobId) {
+      return await this.prisma.application.findFirst({
+        where: { userId, companyId, jobId },
+        orderBy: { createdAt: 'desc' },
+      });
+    }
+
+    return await this.prisma.application.findFirst({
+      where: { userId, companyId },
+      orderBy: { createdAt: 'desc' },
+    });
   }
 
   private mapStatus(status?: string): ApplicationStatus {
