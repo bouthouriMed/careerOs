@@ -13,7 +13,7 @@ export interface CompanyAlias {
 }
 
 export interface ResolutionSignal {
-  type: 'thread_id' | 'recruiter_email' | 'ats_provider' | 'requisition_id' | 'company_domain' | 'job_title' | 'sender_reputation' | 'historical_relationship';
+  type: 'thread_id' | 'recruiter_email' | 'ats_provider' | 'requisition_id' | 'company_domain' | 'job_title' | 'sender_reputation' | 'historical_relationship' | 'same_company_same_week' | 'temporal_proximity';
   value: string;
   weight: number;
 }
@@ -53,4 +53,5 @@ export interface EmailSignals {
   companyName: string | null;
   companyDomain: string | null;
   jobTitle: string | null;
+  emailDate: string | null;
 }

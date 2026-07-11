@@ -164,9 +164,10 @@ model Application {
   contacts  ApplicationContact[]
   artifacts IntelligenceArtifact[]
   signals   CareerSignal[]
-  evidence  EmailEvidence[]
+   evidence  EmailEvidence[]
+   processedEmails ProcessedEmail[]
 
-  @@index([userId])
+   @@index([userId])
   @@index([companyId])
   @@index([status])
   @@index([userId, status])

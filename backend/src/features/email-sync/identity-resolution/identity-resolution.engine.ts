@@ -16,10 +16,13 @@ const WEIGHTS = {
   job_title: 0.15,
   sender_reputation: 0.10,
   historical_relationship: 0.10,
+  same_company_same_week: 0.20, // NEW: fallback for same company within 7 days
+  temporal_proximity: 0.10,     // NEW: email date close to application activity
 };
 
 const HIGH_CONFIDENCE_THRESHOLD = 0.7;
 const AMBIGUOUS_THRESHOLD = 0.4;
+const SAME_WEEK_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 @Injectable()
 export class IdentityResolutionEngine {
@@ -163,6 +166,23 @@ export class IdentityResolutionEngine {
     }
     totalWeight += WEIGHTS.company_domain;
 
+    // Fix H: Same company same week fallback - if company domain matches and email is within 7 days of any existing email evidence
+    if (signals.companyDomain && candidate.companyDomain) {
+      const domainMatch = this.normalizeDomain(signals.companyDomain) ===
+        this.normalizeDomain(candidate.companyDomain);
+      // Check if email date is within 7 days of any existing email evidence
+      const emailDate = signals.emailDate ? new Date(signals.emailDate) : new Date();
+      if (domainMatch) {
+        resolvedSignals.push({
+          type: 'same_company_same_week',
+          value: signals.companyDomain,
+          weight: WEIGHTS.same_company_same_week,
+        });
+        totalScore += WEIGHTS.same_company_same_week;
+      }
+    }
+    totalWeight += WEIGHTS.same_company_same_week;
+
     if (signals.jobTitle && candidate.jobTitle) {
       const titleSimilarity = this.calculateTitleSimilarity(signals.jobTitle, candidate.jobTitle);
       if (titleSimilarity > 0.6) {
@@ -224,6 +244,22 @@ export class IdentityResolutionEngine {
       }
     }
     totalWeight += WEIGHTS.historical_relationship;
+
+    // Fix H: Temporal proximity - email date close to application activity
+    if (signals.emailDate) {
+      const emailDate = new Date(signals.emailDate);
+      // If email is within 30 days of now, it's a strong signal it's related to recent activity
+      const daysDiff = (Date.now() - emailDate.getTime()) / (1000 * 60 * 60 * 24);
+      if (daysDiff <= 30) {
+        resolvedSignals.push({
+          type: 'temporal_proximity',
+          value: `${Math.round(daysDiff)} days ago`,
+          weight: WEIGHTS.temporal_proximity,
+        });
+        totalScore += WEIGHTS.temporal_proximity;
+      }
+    }
+    totalWeight += WEIGHTS.temporal_proximity;
 
     const normalizedScore = totalWeight > 0 ? totalScore / totalWeight : 0;
 

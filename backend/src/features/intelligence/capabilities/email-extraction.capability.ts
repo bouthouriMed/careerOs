@@ -57,12 +57,17 @@ export class EmailExtractionCapability implements IntelligenceCapability, OnModu
 
   private aiProvider: AiProvider;
 
-  private static readonly DETAIL_CATEGORIES = new Set([
+  private static readonly SIMPLE_CATEGORIES = new Set([
+    'application_sent',
+    'application_viewed',
+    'rejection',
+    'follow_up',
+  ]);
+
+  private static readonly EXTRACTION_CATEGORIES = new Set([
     'interview_invite',
     'interview_scheduled',
     'offer',
-    'application_sent',
-    'application_viewed',
   ]);
 
   constructor(
@@ -100,7 +105,6 @@ export class EmailExtractionCapability implements IntelligenceCapability, OnModu
         application: {
           companyName: preExtracted.companyName || this.extractCompanyFromEmail(data.from),
           jobTitle: preExtracted.jobTitle,
-          status: this.mapCategoryToStatus(preExtracted.category),
         },
         recruiter: {
           name: data.fromName || null,
@@ -131,17 +135,13 @@ export class EmailExtractionCapability implements IntelligenceCapability, OnModu
       confidence: preExtracted?.confidence || 0.9,
     });
 
-    await this.eventBus.publish('intelligence.application.extracted', {
-      userId: data.userId,
-      sourceEmailId: data.emailId,
-      result: classification,
-      emailDate: data.date,
-      threadId: data.threadId || null,
-      senderEmail: data.from,
-      senderName: data.fromName || null,
-    });
+    let mergedResult = { ...classification };
 
-    if (EmailExtractionCapability.DETAIL_CATEGORIES.has(classification.category)) {
+    // Only call LLM extraction for complex categories that need detailed extraction
+    // Simple categories (application_sent, application_viewed, rejection, follow_up) have all needed info from classification
+    const needsExtraction = EmailExtractionCapability.EXTRACTION_CATEGORIES.has(classification.category);
+
+    if (needsExtraction) {
       try {
         const details = await this.aiProvider.extractEmail(email, {
           companyName: classification.application.companyName,
@@ -184,15 +184,7 @@ export class EmailExtractionCapability implements IntelligenceCapability, OnModu
           confidence: 0.9,
         });
 
-        await this.eventBus.publish('intelligence.application.extracted', {
-          userId: data.userId,
-          sourceEmailId: data.emailId,
-          result: details,
-          emailDate: data.date,
-          threadId: data.threadId || null,
-          senderEmail: data.from,
-          senderName: data.fromName || null,
-        });
+        mergedResult = this.mergeResults(classification, details);
       } catch (err) {
         console.warn(
           `Phase 2 enrichment failed for email ${data.emailId} (${classification.category}), base app already created:`,
@@ -201,7 +193,38 @@ export class EmailExtractionCapability implements IntelligenceCapability, OnModu
       }
     }
 
+    await this.eventBus.publish('intelligence.application.extracted', {
+      userId: data.userId,
+      sourceEmailId: data.emailId,
+      result: mergedResult,
+      emailDate: data.date,
+      threadId: data.threadId || null,
+      senderEmail: data.from,
+      senderName: data.fromName || null,
+      subject: data.subject,
+      body: data.body,
+    });
+
     return { artifacts };
+  }
+
+  private mergeResults(classification: Record<string, unknown>, details: Record<string, unknown>): Record<string, unknown> {
+    const merged = { ...classification };
+
+    if (details.application) {
+      merged.application = { ...(classification.application as object), ...(details.application as object) };
+    }
+    if (details.recruiter) {
+      merged.recruiter = { ...(classification.recruiter as object), ...(details.recruiter as object) };
+    }
+    if (details.interview) {
+      merged.interview = details.interview;
+    }
+    if (details.offer) {
+      merged.offer = details.offer;
+    }
+
+    return merged;
   }
 
   private extractCompanyFromEmail(fromEmail: string): string | null {
@@ -215,17 +238,5 @@ export class EmailExtractionCapability implements IntelligenceCapability, OnModu
     if (cleanDomain.length < 2) return null;
 
     return cleanDomain.charAt(0).toUpperCase() + cleanDomain.slice(1);
-  }
-
-  private mapCategoryToStatus(category: string): string {
-    switch (category) {
-      case 'application_sent': return 'Applied';
-      case 'application_viewed': return 'Screening';
-      case 'interview_invite':
-      case 'interview_scheduled': return 'Interviewing';
-      case 'offer': return 'Offer';
-      case 'rejection': return 'Rejected';
-      default: return 'Saved';
-    }
   }
 }

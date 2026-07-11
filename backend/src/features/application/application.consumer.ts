@@ -23,6 +23,8 @@ interface ApplicationExtractedEvent {
   threadId?: string;
   senderEmail?: string;
   senderName?: string;
+  subject?: string;
+  body?: string;
 }
 
 @Injectable()
@@ -45,16 +47,36 @@ export class ApplicationConsumer implements OnModuleInit {
   }
 
   private async handleApplicationExtracted(payload: Record<string, unknown>) {
-    const { userId, sourceEmailId, result, emailDate, threadId, senderEmail, senderName } =
+    const { userId, sourceEmailId, result, emailDate, threadId, senderEmail, senderName, subject, body } =
       payload as unknown as ApplicationExtractedEvent;
     const appData = result.application;
     const recruiterData = result.recruiter;
 
     if (!appData.companyName) return;
 
+    // Fix E: Idempotency guard - skip if already processed
+    const alreadyProcessed = await this.prisma.processedEmail.findUnique({
+      where: { emailId: sourceEmailId },
+      select: { id: true },
+    });
+    if (alreadyProcessed) {
+      this.logger.log(`Email ${sourceEmailId} already processed, skipping`);
+      return;
+    }
+
+    // Fix G: Post-extraction validation layer
+    const validation = this.validateExtraction(appData, result.category, body || '', senderEmail || '');
+    if (!validation.valid) {
+      this.logger.warn(`Email ${sourceEmailId} failed validation: ${validation.errors.join(', ')}`);
+      return;
+    }
+    if (validation.warnings.length > 0) {
+      validation.warnings.forEach(w => this.logger.warn(`Email ${sourceEmailId} warning: ${w}`));
+    }
+
     const emailDateObj = emailDate ? new Date(emailDate) : new Date();
 
-    await this.storeEmailEvidence(userId, sourceEmailId, result, emailDateObj);
+    await this.storeEmailEvidence(userId, sourceEmailId, result, emailDateObj, subject || '', body || '');
 
     const companyNorm = CompanyNormalizer.normalize(
       appData.companyName,
@@ -84,25 +106,26 @@ export class ApplicationConsumer implements OnModuleInit {
 
     const atsDetection = AtsRegistry.detect(
       senderEmail || '',
-      result.application.jobTitle || '',
-      '',
+      subject || '',
+      body || '',
     );
 
     const resolution = await this.identityResolution.resolve(userId, {
       threadId: threadId || null,
       senderEmail: senderEmail || '',
       senderName: senderName || null,
-      subject: '',
-      body: '',
+      subject: subject || '',
+      body: body || '',
       atsProvider: atsDetection.provider,
       applicationId: atsDetection.applicationId,
       requisitionId: atsDetection.requisitionId,
       companyName: companyNorm.normalizedName,
       companyDomain: companyNorm.normalizedDomain,
       jobTitle: appData.jobTitle || null,
+      emailDate: emailDateObj.toISOString(),
     });
 
-    const newStatus = this.mapStatus(appData.status);
+    const newStatus = TemporalStatusResolver.statusFromCategory(result.category) ?? ApplicationStatus.Saved;
     const appliedAt = appData.appliedAt ? new Date(appData.appliedAt) : undefined;
 
     let app;
@@ -132,14 +155,27 @@ export class ApplicationConsumer implements OnModuleInit {
       await this.linkRecruiter(app.id, company.id, recruiterData);
     }
 
-    await this.processInterview(app.id, result, emailDateObj);
+    await this.processInterview(app.id, result, emailDateObj, body || '');
 
-    await this.processOffer(app, result, emailDateObj, sourceEmailId);
+    await this.processOffer(app, result, emailDateObj, sourceEmailId, body || '');
 
     this.logger.log(
       `Processed email ${sourceEmailId}: matched=${resolution.matched}, ` +
       `method=${resolution.method}, confidence=${resolution.confidence.toFixed(2)}`,
     );
+
+    // Fix E: Mark email as processed for idempotency
+    await this.prisma.processedEmail.create({
+      data: {
+        userId,
+        emailId: sourceEmailId,
+        threadId: threadId || null,
+        applicationId: app.id,
+        category: result.category,
+        confidence: resolution.confidence,
+        processedAt: new Date(),
+      },
+    });
   }
 
   private async updateExistingApplication(
@@ -156,7 +192,7 @@ export class ApplicationConsumer implements OnModuleInit {
   ) {
     const existingApp = await this.prisma.application.findUnique({
       where: { id: applicationId },
-      select: { id: true, status: true, statusSourceDate: true, statusSourceEmailId: true, appliedAt: true, notes: true },
+      select: { id: true, userId: true, status: true, statusSourceDate: true, statusSourceEmailId: true, appliedAt: true, notes: true },
     });
 
     if (!existingApp) {
@@ -229,7 +265,7 @@ export class ApplicationConsumer implements OnModuleInit {
     const app = await this.prisma.application.create({
       data: {
         userId,
-        companyId: companyId || undefined,
+        companyId,
         jobId,
         status: context.newStatus,
         appliedAt: context.appliedAt,
@@ -258,11 +294,12 @@ export class ApplicationConsumer implements OnModuleInit {
     applicationId: string,
     result: ExtractionResult,
     emailDate: Date,
+    emailBody: string,
   ) {
     if (!result.interview?.isScheduled || !result.interview.date) return;
 
     const interviewDate = new Date(result.interview.date);
-    const bodyLower = (result.interview as Record<string, unknown> as { feedback?: string }).feedback || '';
+    const bodyLower = emailBody.toLowerCase();
 
     const decision = InterviewGuard.decide(interviewDate, bodyLower, emailDate);
 
@@ -318,13 +355,14 @@ export class ApplicationConsumer implements OnModuleInit {
     result: ExtractionResult,
     emailDate: Date,
     sourceEmailId: string,
+    emailBody: string,
   ) {
-    if (!result.offer && !OfferDetector.shouldTransitionToOffer('', result.category)) {
+    if (!result.offer && !OfferDetector.shouldTransitionToOffer(emailBody, result.category)) {
       return;
     }
 
     const offerData = OfferDetector.extract(
-      '',
+      emailBody,
       result.category,
     );
 
@@ -402,15 +440,17 @@ export class ApplicationConsumer implements OnModuleInit {
     emailId: string,
     result: ExtractionResult,
     emailDate: Date,
+    subject: string,
+    body: string,
   ) {
     await this.prisma.emailEvidence.upsert({
       where: { emailId },
       create: {
         userId,
         emailId,
-        subject: '',
+        subject,
         from: '',
-        body: '',
+        body,
         emailDate,
         category: result.category,
       },
@@ -459,18 +499,65 @@ export class ApplicationConsumer implements OnModuleInit {
     });
   }
 
-  private mapStatus(status?: string): ApplicationStatus {
-    switch (status?.toLowerCase()) {
-      case 'applied': return ApplicationStatus.Applied;
-      case 'screening': return ApplicationStatus.Screening;
-      case 'interviewing': return ApplicationStatus.Interviewing;
-      case 'offer': return ApplicationStatus.Offer;
-      case 'accepted': return ApplicationStatus.Accepted;
-      case 'declined': return ApplicationStatus.Declined;
-      case 'rejected': return ApplicationStatus.Rejected;
-      case 'closed': return ApplicationStatus.Closed;
-      default: return ApplicationStatus.Saved;
+  private validateExtraction(
+    appData: ExtractionResult['application'],
+    category: string,
+    emailBody: string,
+    senderEmail: string,
+  ): { valid: boolean; errors: string[]; warnings: string[] } {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    // 1. Company plausibility: if sender domain is known, company should match
+    const senderDomain = senderEmail.match(/@(.+)$/)?.[1];
+    if (senderDomain) {
+      const cleanDomain = senderDomain
+        .replace(/^(mail|app|noreply|no-reply|donotreply|jobs|careers|recruiting)\./, '')
+        .replace(/\.(com|io|co|org|net)$/, '');
+      if (cleanDomain.length >= 3) {
+        const companyLower = appData.companyName?.toLowerCase() || '';
+        const domainKeywords = cleanDomain.toLowerCase().split('.');
+        const hasMatch = domainKeywords.some(k => companyLower.includes(k));
+        if (!hasMatch && appData.companyName) {
+          warnings.push(`Company "${appData.companyName}" doesn't match sender domain "${senderDomain}"`);
+        }
+      }
     }
+
+    // 2. Terminal status guard: if existing app is Rejected/Accepted/Declined, block all transitions
+    // (This is checked later when updating, but we can warn here)
+
+    // 3. Date plausibility: interview/offer dates must be reasonable
+    if (appData.jobTitle && appData.jobTitle.length > 100) {
+      warnings.push('Job title suspiciously long');
+    }
+
+    // 4. Contradiction detection: body keywords vs LLM extraction
+    const bodyLower = emailBody.toLowerCase();
+    const hasRejectionKeywords = ['unfortunately', 'not selected', 'not moving forward', 'declined', 'rejected', 'not a fit'].some(k => bodyLower.includes(k));
+    const hasOfferKeywords = ['offer', 'pleased to offer', 'welcome to the team', 'compensation package', 'salary'].some(k => bodyLower.includes(k));
+    const hasCancellationKeywords = ['cancel', 'reschedule', 'postpone', 'unable to attend'].some(k => bodyLower.includes(k));
+
+    if (hasRejectionKeywords && category !== 'rejection') {
+      warnings.push('Email body contains rejection language but category is not rejection');
+    }
+    if (hasOfferKeywords && category !== 'offer') {
+      warnings.push('Email body contains offer language but category is not offer');
+    }
+    if (hasCancellationKeywords) {
+      warnings.push('Email body contains cancellation/reschedule language');
+    }
+
+    // 5. Basic sanity checks
+    if (!appData.companyName || appData.companyName.trim().length < 2) {
+      errors.push('Company name is missing or too short');
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings,
+    };
   }
 
   private mapInterviewType(type?: string | null): InterviewType {

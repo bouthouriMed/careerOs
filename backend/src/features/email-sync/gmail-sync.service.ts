@@ -185,6 +185,20 @@ export class GmailSyncService implements OnModuleInit {
 
           processedEmailIds.add(msg.id);
           totalScanned++;
+
+          // Fix I: Progressive sync feedback - publish progress every 50 emails
+          if (totalScanned % 50 === 0) {
+            await this.emailSyncService.updateProgress(userId, {
+              emailsScanned: totalScanned,
+              applicationsDetected: hiringDetected,
+            });
+            await this.eventBus.publish('email.sync.progress', {
+              userId,
+              emailsScanned: totalScanned,
+              hiringDetected,
+              pageToken: nextPageToken || null,
+            });
+          }
         } catch {
           this.logger.warn(`Failed to process email ${msg.id}`);
         }
@@ -193,6 +207,14 @@ export class GmailSyncService implements OnModuleInit {
       await this.emailSyncService.updateProgress(userId, {
         emailsScanned: totalScanned,
         applicationsDetected: hiringDetected,
+      });
+
+      // Fix I: Publish progress at end of each page
+      await this.eventBus.publish('email.sync.progress', {
+        userId,
+        emailsScanned: totalScanned,
+        hiringDetected,
+        pageToken: nextPageToken || null,
       });
 
       nextPageToken = response.data.nextPageToken ?? undefined;
