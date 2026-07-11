@@ -1,9 +1,11 @@
 'use client';
 
+import { useMemo } from 'react';
 import styled from 'styled-components';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/platform/auth/hooks/use-auth';
+import { useApplicationControllerGetTimelineQuery } from '@/platform/api/rtk-query/generated/api';
 
 const scrollbarStyles = `
   &::-webkit-scrollbar { width: 4px; }
@@ -186,10 +188,10 @@ const LogoutButton = styled.button`
   }
 `;
 
-const NAV_ITEMS: Array<{ href: string; label: string; icon: string; badge?: string }> = [
+const NAV_ITEM_DEFS: Array<{ href: string; label: string; icon: string }> = [
   { href: '/dashboard', label: 'Dashboard', icon: 'grid' },
-  { href: '/applications', label: 'Applications', icon: 'file', badge: '12' },
-  { href: '/interviews', label: 'Interviews', icon: 'message', badge: '3' },
+  { href: '/applications', label: 'Applications', icon: 'file' },
+  { href: '/interviews', label: 'Interviews', icon: 'message' },
   { href: '/documents', label: 'Documents', icon: 'file2' },
   { href: '/settings', label: 'Settings', icon: 'settings' },
 ];
@@ -246,6 +248,26 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { data: timelineData } = useApplicationControllerGetTimelineQuery(undefined, { skip: !user });
+
+  const allApps = useMemo(() => {
+    if (!timelineData) return [];
+    const t = timelineData as { timeline: Array<{ date: string; applications: Array<Record<string, unknown>> }> };
+    return t.timeline?.flatMap(e => e.applications) ?? [];
+  }, [timelineData]);
+
+  const appsCount = allApps.length;
+  const interviewsCount = allApps.filter((a: Record<string, unknown>) => a.status === 'Interviewing' || a.status === 'Interview').length;
+
+  const navItems = NAV_ITEM_DEFS.map((item) => ({
+    ...item,
+    badge: item.href === '/applications'
+      ? String(appsCount)
+      : item.href === '/interviews'
+        ? String(interviewsCount)
+        : undefined,
+  }));
+
   const name = user?.name || 'User';
   const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'U';
 
@@ -276,7 +298,7 @@ export function Sidebar() {
       <NavLabel>Workspace</NavLabel>
 
       <Nav>
-        {NAV_ITEMS.map(({ href, label, icon, badge }) => {
+        {navItems.map(({ href, label, icon, badge }) => {
           const Icon = iconMap[icon];
           const isActive = pathname === href;
           return (

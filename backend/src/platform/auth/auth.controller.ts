@@ -34,10 +34,11 @@ export class AuthController {
     const user = await this.oauthService.handleCallback(code);
     const session = await this.sessionService.createSession(user.id);
 
+    const isDev = process.env.NODE_ENV !== 'production';
     res.cookie('session', session.id, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: !isDev,
+      sameSite: isDev ? 'none' : 'lax',
       maxAge: 72 * 60 * 60 * 1000,
     });
 

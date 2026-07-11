@@ -7,8 +7,19 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  const isDev = process.env.NODE_ENV !== 'production';
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: (origin, callback) => {
+      const allowed = [
+        process.env.FRONTEND_URL || 'http://localhost:3000',
+        ...(isDev ? [] : []),
+      ];
+      if (isDev) {
+        callback(null, origin || true);
+      } else {
+        callback(null, allowed.includes(origin) || allowed.includes('*'));
+      }
+    },
     credentials: true,
   });
 
