@@ -1,14 +1,5 @@
-import { tokens } from './tokens';
+import { AppTheme } from './tokens';
 
-export const lightTheme = {
-  colors: {
-    ...tokens.colors,
-  },
-  spacing: tokens.spacing,
-  typography: tokens.typography,
-  borderRadius: tokens.borderRadius,
-  shadows: tokens.shadows,
-  breakpoints: tokens.breakpoints,
-};
+export type { AppTheme };
 
-export type Theme = typeof lightTheme;
+export { darkTheme, lightTheme } from './tokens';

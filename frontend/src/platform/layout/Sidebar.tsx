@@ -6,22 +6,20 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/platform/auth/hooks/use-auth';
 import { useApplicationControllerGetTimelineQuery } from '@/platform/api/rtk-query/generated/api';
-
-const scrollbarStyles = `
-  &::-webkit-scrollbar { width: 4px; }
-  &::-webkit-scrollbar-track { background: transparent; }
-  &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
-  &::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.12); }
-`;
+import { useThemeMode } from '@/platform/design-system/theme/ThemeProvider';
 
 const Aside = styled.aside`
-  background: ${({ theme }) => theme.colors.sidebar};
-  border-right: 1px solid ${({ theme }) => theme.colors.borderDark2};
+  background: ${({ theme }) => theme.colors.sidebarBg};
+  border-right: 1px solid ${({ theme }) => theme.colors.borderLight};
   display: flex;
   flex-direction: column;
   padding: 20px 12px;
   overflow-y: auto;
-  ${scrollbarStyles}
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: ${({ theme }) => theme.colors.scrollbarThumb}; border-radius: 4px; }
+  &::-webkit-scrollbar-thumb:hover { background: ${({ theme }) => theme.colors.scrollbarThumbHover}; }
 `;
 
 const LogoWrap = styled(Link)`
@@ -38,7 +36,7 @@ const LogoIcon = styled.div`
   height: 32px;
   border-radius: 12px;
   flex-shrink: 0;
-  background: linear-gradient(135deg, #4F8EF7 0%, #2563EB 100%);
+  background: linear-gradient(135deg, ${({ theme }) => theme.colors.primary} 0%, #2563EB 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -48,13 +46,13 @@ const LogoName = styled.span`
   font-size: 13px;
   font-weight: 700;
   letter-spacing: -0.3px;
-  color: ${({ theme }) => theme.colors.textDark};
+  color: ${({ theme }) => theme.colors.text};
 `;
 
 const LogoPlan = styled.span`
   font-size: 10px;
   font-weight: 600;
-  color: ${({ theme }) => theme.colors.blue};
+  color: ${({ theme }) => theme.colors.primary};
 `;
 
 const NavLabel = styled.p`
@@ -62,7 +60,7 @@ const NavLabel = styled.p`
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #3B4A6B;
+  color: ${({ theme }) => theme.colors.textMuted};
   padding: 0 12px;
   margin-bottom: 8px;
 `;
@@ -86,16 +84,16 @@ const NavLink = styled(Link)<{ $active: boolean }>`
   font-weight: 500;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
   text-decoration: none;
-  background: ${({ $active }) =>
-    $active ? 'rgba(79,142,247,0.12)' : 'transparent'};
-  border-color: ${({ $active }) =>
-    $active ? 'rgba(79,142,247,0.2)' : 'transparent'};
-  color: ${({ $active }) =>
-    $active ? '#E8EBF4' : '#6B7A9E'};
+  background: ${({ $active, theme }) =>
+    $active ? theme.colors.primaryMuted : 'transparent'};
+  border-color: ${({ $active, theme }) =>
+    $active ? `${theme.colors.primary}33` : 'transparent'};
+  color: ${({ $active, theme }) =>
+    $active ? theme.colors.text : theme.colors.textMuted};
 
   &:hover {
-    background: rgba(255,255,255,0.04);
-    color: #A8B3CF;
+    background: ${({ theme }) => theme.colors.surfaceHover};
+    color: ${({ theme }) => theme.colors.textSecondary};
   }
 `;
 
@@ -115,8 +113,8 @@ const NavBadge = styled.span`
   font-weight: 700;
   padding: 2px 6px;
   border-radius: 6px;
-  background: rgba(255,255,255,0.07);
-  color: ${({ theme }) => theme.colors.dim};
+  background: ${({ theme }) => theme.colors.borderLight};
+  color: ${({ theme }) => theme.colors.textMuted};
 `;
 
 const UserCard = styled.div`
@@ -126,8 +124,8 @@ const UserCard = styled.div`
   padding: 12px;
   border-radius: 12px;
   margin-top: 16px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: ${({ theme }) => theme.colors.surfaceHover};
+  border: 1px solid ${({ theme }) => theme.colors.borderLight};
 `;
 
 const UserAvatar = styled.div`
@@ -135,7 +133,7 @@ const UserAvatar = styled.div`
   height: 32px;
   border-radius: 10px;
   flex-shrink: 0;
-  background: linear-gradient(135deg, #4F8EF7, #A78BFA);
+  background: linear-gradient(135deg, ${({ theme }) => theme.colors.primary}, #A78BFA);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -152,12 +150,12 @@ const UserInfo = styled.div`
 const UserName = styled.div`
   font-size: 12px;
   font-weight: 600;
-  color: ${({ theme }) => theme.colors.textDark};
+  color: ${({ theme }) => theme.colors.text};
 `;
 
 const UserRole = styled.div`
   font-size: 10px;
-  color: ${({ theme }) => theme.colors.dim};
+  color: ${({ theme }) => theme.colors.textMuted};
 `;
 
 const BottomSection = styled.div`
@@ -165,6 +163,34 @@ const BottomSection = styled.div`
   display: flex;
   flex-direction: column;
   gap: 4px;
+`;
+
+const BottomActions = styled.div`
+  display: flex;
+  gap: 4px;
+`;
+
+const ThemeToggle = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: ${({ theme }) => theme.colors.textMuted};
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  flex: 1;
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.surfaceHover};
+    color: ${({ theme }) => theme.colors.text};
+  }
 `;
 
 const LogoutButton = styled.button`
@@ -175,16 +201,17 @@ const LogoutButton = styled.button`
   border-radius: 12px;
   border: 1px solid transparent;
   background: transparent;
-  color: #6B7A9E;
+  color: ${({ theme }) => theme.colors.textMuted};
   font-size: 13px;
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
+  flex: 1;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.04);
-    color: #F87171;
+    background: ${({ theme }) => theme.colors.surfaceHover};
+    color: ${({ theme }) => theme.colors.error};
   }
 `;
 
@@ -236,6 +263,22 @@ function SettingsIcon() {
   );
 }
 
+function SunIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+    </svg>
+  );
+}
+
 const iconMap: Record<string, typeof GridIcon> = {
   grid: GridIcon,
   file: FileIcon,
@@ -248,6 +291,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { mode, toggle } = useThemeMode();
   const { data: timelineData } = useApplicationControllerGetTimelineQuery(undefined, { skip: !user });
 
   const allApps = useMemo(() => {
@@ -275,7 +319,7 @@ export function Sidebar() {
     try {
       await logout().unwrap();
     } catch {
-      // proceed with redirect even if logout API fails
+      // session may already be expired
     }
     router.replace('/');
   };
@@ -319,16 +363,18 @@ export function Sidebar() {
             <UserName>{name}</UserName>
             <UserRole>Job Seeker</UserRole>
           </UserInfo>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6B7A9E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="3" /><path d="M19.07 4.93l-1.41 1.41M5.34 18.66l-1.41 1.41M19.07 19.07l-1.41-1.41M5.34 5.34L3.93 3.93M22 12h-2M4 12H2M19.07 4.93A10 10 0 014.93 19.07M19.07 19.07A10 10 0 014.93 4.93" />
-          </svg>
         </UserCard>
-        <LogoutButton onClick={handleLogout}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
-          </svg>
-          Sign out
-        </LogoutButton>
+        <BottomActions>
+          <ThemeToggle onClick={toggle} title={`Switch to ${mode === 'dark' ? 'light' : 'dark'} mode`}>
+            {mode === 'dark' ? <SunIcon /> : <MoonIcon />}
+          </ThemeToggle>
+          <LogoutButton onClick={handleLogout}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            Sign out
+          </LogoutButton>
+        </BottomActions>
       </BottomSection>
     </Aside>
   );

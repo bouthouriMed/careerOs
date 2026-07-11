@@ -13,6 +13,9 @@ const HIRING_KEYWORDS = [
   'phone screen', 'technical screen', 'onsite', 'take home',
 ];
 
+const INITIAL_SYNC_DAYS = 90;
+const MAX_EMAILS = 500;
+
 @Injectable()
 export class GmailSyncService implements OnModuleInit {
   private readonly config = authConfig();
@@ -59,7 +62,11 @@ export class GmailSyncService implements OnModuleInit {
 
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
-    const query = this.buildQuery();
+    const syncState = await this.prisma.emailSyncState.findUnique({ where: { userId } });
+    const isIncremental = syncState?.lastSyncedAt != null;
+    const query = this.buildQuery(isIncremental ? syncState!.lastSyncedAt! : null);
+
+    const processedEmailIds = new Set<string>();
     let totalScanned = 0;
     let hiringDetected = 0;
     let nextPageToken: string | undefined;
@@ -77,6 +84,8 @@ export class GmailSyncService implements OnModuleInit {
 
       for (const msg of messages) {
         if (!msg.id) continue;
+        if (processedEmailIds.has(msg.id)) continue;
+
         try {
           const detail = await gmail.users.messages.get({
             userId: 'me',
@@ -92,18 +101,22 @@ export class GmailSyncService implements OnModuleInit {
           const body = this.getEmailBody(detail.data.payload);
 
           if (this.isHiringRelated(subject, from)) {
-            this.eventBus.publish('email.hiring.detected', {
-              userId,
-              emailId: msg.id,
-              subject,
-              from: this.parseEmail(from),
-              fromName,
-              body,
-              date,
-            });
-            hiringDetected++;
+            const alreadyProcessed = await this.isEmailAlreadyProcessed(msg.id);
+            if (!alreadyProcessed) {
+              await this.eventBus.publish('email.hiring.detected', {
+                userId,
+                emailId: msg.id,
+                subject,
+                from: this.parseEmail(from),
+                fromName,
+                body,
+                date,
+              });
+              hiringDetected++;
+            }
           }
 
+          processedEmailIds.add(msg.id);
           totalScanned++;
         } catch {
           // skip individual email failures
@@ -116,15 +129,29 @@ export class GmailSyncService implements OnModuleInit {
       });
 
       nextPageToken = response.data.nextPageToken ?? undefined;
-    } while (nextPageToken && totalScanned < 500);
+    } while (nextPageToken && totalScanned < MAX_EMAILS);
 
     await this.emailSyncService.completeSync(userId);
   }
 
-  private buildQuery(): string {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const dateStr = thirtyDaysAgo.toISOString().split('T')[0];
+  private async isEmailAlreadyProcessed(emailId: string): Promise<boolean> {
+    const existing = await this.prisma.intelligenceArtifact.findFirst({
+      where: { sourceEmailId: emailId },
+      select: { id: true },
+    });
+    return existing != null;
+  }
+
+  private buildQuery(sinceDate: Date | null): string {
+    let dateStr: string;
+
+    if (sinceDate) {
+      dateStr = sinceDate.toISOString().split('T')[0];
+    } else {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - INITIAL_SYNC_DAYS);
+      dateStr = cutoff.toISOString().split('T')[0];
+    }
 
     const keywordQueries = HIRING_KEYWORDS.map((kw) => `subject:(${kw})`).join(' OR ');
     return `(${keywordQueries}) after:${dateStr}`;

@@ -20,22 +20,6 @@ const Main = styled.main`
   min-width: 0;
 `;
 
-const scrollbarStyles = `
-  &::-webkit-scrollbar {
-    width: 4px;
-  }
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  &::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.08);
-    border-radius: 4px;
-  }
-  &::-webkit-scrollbar-thumb:hover {
-    background: rgba(255,255,255,0.12);
-  }
-`;
-
 const Workspace = styled.div`
   flex: 1;
   overflow-y: auto;
@@ -43,7 +27,20 @@ const Workspace = styled.div`
   display: flex;
   flex-direction: column;
   gap: 20px;
-  ${scrollbarStyles}
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => theme.colors.scrollbarThumb};
+    border-radius: 4px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: ${({ theme }) => theme.colors.scrollbarThumbHover};
+  }
 `;
 
 interface AppShellProps {

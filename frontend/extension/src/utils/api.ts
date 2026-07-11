@@ -1,5 +1,21 @@
 const API_BASE = 'http://localhost:4000';
 
+async function getSessionCookie(): Promise<string | null> {
+  try {
+    const cookie = await chrome.cookies.get({
+      url: API_BASE,
+      name: 'session',
+    });
+    return cookie?.value ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function buildCookieHeader(value: string): Record<string, string> {
+  return { Cookie: `session=${value}` };
+}
+
 export interface ImportPayload {
   sourceUrl: string;
   companyName: string;
@@ -32,10 +48,15 @@ export async function importApplication(
     if (key in payload) body[key] = payload[key];
   }
   if (!body.source) body.source = 'browser_extension';
+
+  const sessionId = await getSessionCookie();
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (sessionId) Object.assign(headers, buildCookieHeader(sessionId));
+
   const res = await fetch(`${API_BASE}/applications/import`, {
     method: 'POST',
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify(body),
   });
 
@@ -49,8 +70,13 @@ export async function importApplication(
 
 export async function checkAuth(): Promise<{ user: { id: string; name: string | null; email: string } } | null> {
   try {
+    const sessionId = await getSessionCookie();
+    const headers: Record<string, string> = {};
+    if (sessionId) Object.assign(headers, buildCookieHeader(sessionId));
+
     const res = await fetch(`${API_BASE}/auth/me`, {
       credentials: 'include',
+      headers,
     });
     if (!res.ok) return null;
     return res.json();

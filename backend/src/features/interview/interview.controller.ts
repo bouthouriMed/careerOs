@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Patch, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthGuard } from '../../platform/auth/auth.guard';
+import { CurrentUser } from '../../platform/auth/current-user.decorator';
 import { InterviewService } from './interview.service';
 import { CreateInterviewDto, UpdateInterviewStatusDto } from './dto/interview.dto';
 
@@ -11,10 +12,16 @@ export class InterviewController {
   constructor(private readonly interviewService: InterviewService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get interviews by application' })
+  @ApiOperation({ summary: 'Get interviews (all or by application)' })
   @ApiResponse({ status: 200, type: [Object] })
-  async findByApplication(@Query('applicationId') applicationId: string) {
-    return this.interviewService.findByApplication(applicationId);
+  async find(
+    @CurrentUser() user: { id: string },
+    @Query('applicationId') applicationId?: string,
+  ) {
+    if (applicationId) {
+      return this.interviewService.findByApplication(applicationId);
+    }
+    return this.interviewService.findAll(user.id);
   }
 
   @Post()

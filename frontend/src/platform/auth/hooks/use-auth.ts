@@ -5,7 +5,7 @@ import {
 import { User } from '../types';
 
 export function useAuth() {
-  const { data, isLoading, isError } = useAuthControllerGetCurrentUserQuery();
+  const { data, isLoading, isError, isFetching } = useAuthControllerGetCurrentUserQuery();
   const currentUser = data as { user: User } | undefined;
   const [logoutMutation] = useAuthControllerLogoutMutation();
 
@@ -15,6 +15,7 @@ export function useAuth() {
     user,
     isAuthenticated: !isLoading && !isError && !!user,
     isLoading,
+    isFetching,
     logout: logoutMutation,
   };
 }

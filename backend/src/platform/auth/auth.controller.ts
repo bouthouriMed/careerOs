@@ -38,7 +38,7 @@ export class AuthController {
     res.cookie('session', session.id, {
       httpOnly: true,
       secure: !isDev,
-      sameSite: isDev ? 'none' : 'lax',
+      sameSite: 'lax',
       maxAge: 72 * 60 * 60 * 1000,
     });
 
@@ -54,7 +54,7 @@ export class AuthController {
     if (sessionId) {
       await this.sessionService.revokeSession(sessionId);
     }
-    res.clearCookie('session');
+    res.clearCookie('session', { sameSite: 'lax', secure: process.env.NODE_ENV === 'production' });
     res.json({ message: 'Logged out' });
   }
 

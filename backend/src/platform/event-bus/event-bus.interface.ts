@@ -4,6 +4,6 @@ export interface EventPayload {
 }
 
 export interface EventBus {
-  publish(event: string, payload: EventPayload): void;
+  publish(event: string, payload: EventPayload): Promise<void>;
   subscribe(event: string, handler: (payload: EventPayload) => Promise<void>): void;
 }

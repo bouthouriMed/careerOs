@@ -19,7 +19,7 @@ export const StyledInput = styled.input<{ $hasError: boolean }>`
   font-size: ${({ theme }) => theme.typography.sizes.sm};
   font-family: ${({ theme }) => theme.typography.fontFamily};
   color: ${({ theme }) => theme.colors.text};
-  background: ${({ theme }) => theme.colors.background};
+  background: ${({ theme }) => theme.colors.cardBg};
   outline: none;
   transition: border-color 0.15s ease;
 

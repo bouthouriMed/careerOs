@@ -21,7 +21,7 @@ export class GroqProvider implements AiProvider {
 
   private buildClassifyPrompt(email: EmailContent): string {
     const body = email.body.slice(0, 2000);
-    return `Extract basic job application data from this hiring email.
+    return `You are a job application classifier. Analyze this hiring email and extract structured data.
 
 Email:
 From: ${email.fromName ? `${email.fromName} <${email.from}>` : email.from}
@@ -30,28 +30,34 @@ Date: ${email.date.toISOString()}
 Body:
 ${body}
 
-Status keywords:
-  "applied" → "thanks for applying", "application received"
-  "interviewing" → "interview scheduled", "schedule a time"
-  "offer" → "offer letter", "compensation", "salary"
-  "rejected" → "unfortunately", "regret to inform"
+RULES for status classification:
+- "applied" → application confirmation, "thanks for applying", "application received", "we got your application"
+- "interviewing" → interview scheduled, "schedule a time", "interview invitation", "phone screen", "technical interview"
+- "rejected" → "unfortunately", "regret to inform", "not selected", "not moving forward", "decided to move on", "other candidates", "position has been filled"
+- "offer" → "offer letter", "compensation", "salary", "we are pleased to offer"
+- If the email is ambiguous, use the most conservative status (e.g., if unsure between interviewing and rejected, use applied)
 
-Date rules:
-  - If this is an application confirmation: appliedAt = email date or body date
-  - If this is interview/rejection/offer/follow-up: appliedAt = null
+RULES for company extraction:
+- Extract the OFFICIAL company name from the sender domain or email signature
+- Do NOT use department names, team names, or individual names as company
+- Example: @google.com → Google, @stripe.com → Stripe
 
-Company rules:
-  - Extract company from sender domain (e.g., @google.com → Google)
-  - Set companyDomain from sender domain
+RULES for job title:
+- If you cannot determine the job title with high confidence, set it to null
+- Do NOT guess or make up job titles
+
+RULES for date:
+- If this is an application confirmation: appliedAt = email date or date mentioned in body
+- If this is interview/rejection/offer/follow-up: appliedAt = null
 
 Return ONLY plain JSON with all fields:
 {
   "isHiringRelated": true,
   "category": "application_sent|interview_invite|interview_scheduled|rejection|offer|follow_up|application_viewed|other",
   "application": {
-    "companyName": "string (required)",
-    "companyDomain": "string or null",
-    "jobTitle": "string or null",
+    "companyName": "string (required, official company name)",
+    "companyDomain": "string or null (sender domain)",
+    "jobTitle": "string or null (only if confident)",
     "status": "applied|screening|interviewing|offer|rejected|accepted|declined|saved",
     "appliedAt": "ISO date or null"
   },
@@ -64,12 +70,13 @@ Return ONLY plain JSON with all fields:
   private buildExtractPrompt(email: EmailContent, context?: { companyName?: string; jobTitle?: string; category?: string }): string {
     const body = email.body.slice(0, 2000);
     const known = context
-      ? `\nCompany: ${context.companyName || 'unknown'}
+      ? `\nKnown context:
+Company: ${context.companyName || 'unknown'}
 Job Title: ${context.jobTitle || 'unknown'}
 Category: ${context.category || 'unknown'}
 `
       : '';
-    return `Extract detailed job application data from this hiring email.${known}
+    return `You are a job application data extractor. Extract detailed structured data from this hiring email.${known}
 
 Email:
 From: ${email.fromName ? `${email.fromName} <${email.from}>` : email.from}
@@ -78,15 +85,22 @@ Date: ${email.date.toISOString()}
 Body:
 ${body}
 
+CRITICAL RULES:
+- Company name must be the OFFICIAL company name (not a department, team, or individual)
+- Job title must be extracted with high confidence. If unsure, set to null
+- If the email mentions rejection language ("unfortunately", "regret", "not selected", "not moving forward"), set status to "rejected"
+- If the email mentions interview scheduling, set isScheduled to true and extract date/time/duration
+- For dates, always use ISO 8601 format
+
 Return ONLY plain JSON. Set null for anything not found:
 {
   "isHiringRelated": true,
   "category": "application_sent|interview_invite|interview_scheduled|rejection|offer|follow_up|application_viewed|other",
   "application": {
-    "companyName": "string",
+    "companyName": "string (official company name)",
     "companyDomain": "string or null",
     "companyDescription": "string or null",
-    "jobTitle": "string",
+    "jobTitle": "string or null (only if confident)",
     "jobDescription": "string or null",
     "jobLocation": "string or null",
     "jobSalaryMin": "number or null",

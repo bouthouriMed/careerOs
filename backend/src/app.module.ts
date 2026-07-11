@@ -9,6 +9,7 @@ import { RecruiterModule } from './features/recruiter/recruiter.module';
 import { ApplicationModule } from './features/application/application.module';
 import { InterviewModule } from './features/interview/interview.module';
 import { IntelligenceModule } from './features/intelligence/intelligence.module';
+import { SignalModule } from './features/signal/signal.module';
 import { validateEnvironment } from './platform/config/environment';
 
 @Module({
@@ -26,6 +27,7 @@ import { validateEnvironment } from './platform/config/environment';
     ApplicationModule,
     InterviewModule,
     IntelligenceModule,
+    SignalModule,
   ],
 })
 export class AppModule {}

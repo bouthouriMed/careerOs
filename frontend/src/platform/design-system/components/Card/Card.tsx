@@ -14,7 +14,7 @@ const spacingMap = {
 } as const;
 
 const StyledCard = styled.div<{ $padding: 'sm' | 'md' | 'lg'; $shadow: 'sm' | 'md' | 'lg' }>`
-  background: ${({ theme }) => theme.colors.background};
+  background: ${({ theme }) => theme.colors.cardBg};
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: ${({ theme }) => theme.borderRadius.lg};
   padding: ${({ $padding }) => spacingMap[$padding]};

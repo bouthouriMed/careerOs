@@ -6,9 +6,42 @@ import { InterviewStatus, InterviewType } from '@prisma/client';
 export class InterviewService {
   constructor(private prisma: PrismaService) {}
 
+  async findAll(userId: string) {
+    return this.prisma.interview.findMany({
+      where: {
+        application: { userId },
+      },
+      include: {
+        application: {
+          include: {
+            company: {
+              select: { id: true, name: true, domain: true, logoUrl: true },
+            },
+            job: {
+              select: { id: true, title: true, location: true },
+            },
+          },
+        },
+      },
+      orderBy: { scheduledAt: 'asc' },
+    });
+  }
+
   async findByApplication(applicationId: string) {
     return this.prisma.interview.findMany({
       where: { applicationId },
+      include: {
+        application: {
+          include: {
+            company: {
+              select: { id: true, name: true, domain: true, logoUrl: true },
+            },
+            job: {
+              select: { id: true, title: true, location: true },
+            },
+          },
+        },
+      },
       orderBy: { scheduledAt: 'asc' },
     });
   }
