@@ -7,6 +7,7 @@ import { CompanyService } from '../company/company.service';
 import { JobService } from '../job/job.service';
 import { RecruiterService } from '../recruiter/recruiter.service';
 import { IdentityResolutionEngine } from '../email-sync/identity-resolution/identity-resolution.engine';
+import { ContinuousValidationService } from './validation/continuous-validation.service';
 
 @Module({
   controllers: [ApplicationController],
@@ -18,7 +19,8 @@ import { IdentityResolutionEngine } from '../email-sync/identity-resolution/iden
     RecruiterService,
     PrismaService,
     IdentityResolutionEngine,
+    ContinuousValidationService,
   ],
-  exports: [ApplicationService],
+  exports: [ApplicationService, ContinuousValidationService],
 })
 export class ApplicationModule {}

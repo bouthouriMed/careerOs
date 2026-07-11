@@ -7,6 +7,7 @@ import { ContextBuilder } from './context-builder/context-builder.service';
 import { ArtifactValidator } from './artifact-validator/artifact-validator.service';
 import { SignalGenerator } from './signal-generator/signal-generator.service';
 import { CareerMemoryService } from './career-memory/career-memory.service';
+import { EvaluationFrameworkService } from './evaluation/evaluation-framework.service';
 
 @Module({
   providers: [
@@ -18,7 +19,8 @@ import { CareerMemoryService } from './career-memory/career-memory.service';
     SignalGenerator,
     CareerMemoryService,
     EmailExtractionCapability,
+    EvaluationFrameworkService,
   ],
-  exports: [IntelligenceOrchestrator, CapabilityRegistry, ContextBuilder, ArtifactValidator, SignalGenerator, CareerMemoryService],
+  exports: [IntelligenceOrchestrator, CapabilityRegistry, ContextBuilder, ArtifactValidator, SignalGenerator, CareerMemoryService, EvaluationFrameworkService],
 })
 export class IntelligenceModule {}
