@@ -53,6 +53,7 @@ model User {
   careerMemories CareerMemory[]
   intelligenceArtifacts IntelligenceArtifact[]
   careerSignals CareerSignal[]
+  emailEvidence EmailEvidence[]
 }
 
 model Session {
@@ -150,12 +151,20 @@ model Application {
   appliedAt DateTime?
   source    String?
   notes     String?
+  confidence          Float    @default(0.5)
+  statusSourceEmailId String?
+  statusSourceDate    DateTime?
+  offerSalary         String?
+  offerCurrency       String?
+  offerDeadline       DateTime?
+  offerReceivedAt     DateTime?
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
   interviews Interview[]
   contacts  ApplicationContact[]
   artifacts IntelligenceArtifact[]
   signals   CareerSignal[]
+  evidence  EmailEvidence[]
 
   @@index([userId])
   @@index([companyId])
@@ -280,4 +289,45 @@ model CareerSignal {
   @@index([type])
   @@index([userId, status])
   @@index([expiresAt])
+}
+
+model EmailEvidence {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailId       String   @unique
+  threadId      String?
+  applicationId String?
+  application   Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  subject       String
+  from          String
+  fromName      String?
+  body          String
+  emailDate     DateTime
+  category      String?
+  atsProvider   String?
+  senderType    String?
+  metadata      Json?
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([threadId])
+  @@index([applicationId])
+  @@index([emailDate])
+}
+
+model ProcessedEmail {
+  id            String   @id @default(cuid())
+  userId        String
+  emailId       String   @unique
+  threadId      String?
+  applicationId String?
+  application   Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  category      String
+  confidence    Float    @default(0.5)
+  processedAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([threadId])
+  @@index([applicationId])
 }

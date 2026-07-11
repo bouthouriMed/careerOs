@@ -6,6 +6,7 @@ import { ApplicationConsumer } from './application.consumer';
 import { CompanyService } from '../company/company.service';
 import { JobService } from '../job/job.service';
 import { RecruiterService } from '../recruiter/recruiter.service';
+import { IdentityResolutionEngine } from '../email-sync/identity-resolution/identity-resolution.engine';
 
 @Module({
   controllers: [ApplicationController],
@@ -16,6 +17,7 @@ import { RecruiterService } from '../recruiter/recruiter.service';
     JobService,
     RecruiterService,
     PrismaService,
+    IdentityResolutionEngine,
   ],
   exports: [ApplicationService],
 })

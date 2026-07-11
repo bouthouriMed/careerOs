@@ -13,6 +13,7 @@ import {
 } from '../capability-registry';
 import { IntelligenceOrchestrator } from '../intelligence-orchestrator';
 import { AssembledContext } from '../context-builder';
+import { DeterministicExtractor } from '../../email-sync/pre-extraction/deterministic-extractor';
 
 const EMAIL_EXTRACTION_DEFINITION: CapabilityDefinition = {
   id: 'email-extraction',
@@ -32,11 +33,22 @@ const EMAIL_EXTRACTION_DEFINITION: CapabilityDefinition = {
 interface QueuedEmail {
   userId: string;
   emailId: string;
+  threadId?: string;
   subject: string;
   from: string;
   fromName?: string;
   body: string;
   date: string;
+  preExtracted?: {
+    companyName: string | null;
+    jobTitle: string | null;
+    category: string | null;
+    confidence: number;
+    extractedFields: string[];
+    atsProvider: string | null;
+    applicationId: string | null;
+    requisitionId: string | null;
+  };
 }
 
 @Injectable()
@@ -79,7 +91,26 @@ export class EmailExtractionCapability implements IntelligenceCapability, OnModu
       date: new Date(data.date),
     };
 
-    const classification = await this.aiProvider.classifyEmail(email);
+    let classification;
+    const preExtracted = data.preExtracted;
+
+    if (preExtracted && preExtracted.confidence >= 0.7 && preExtracted.category) {
+      classification = {
+        category: preExtracted.category,
+        application: {
+          companyName: preExtracted.companyName || this.extractCompanyFromEmail(data.from),
+          jobTitle: preExtracted.jobTitle,
+          status: this.mapCategoryToStatus(preExtracted.category),
+        },
+        recruiter: {
+          name: data.fromName || null,
+          email: data.from,
+        },
+        confidence: preExtracted.confidence,
+      };
+    } else {
+      classification = await this.aiProvider.classifyEmail(email);
+    }
 
     await this.prisma.intelligenceArtifact.create({
       data: {
@@ -87,7 +118,7 @@ export class EmailExtractionCapability implements IntelligenceCapability, OnModu
         type: 'email_classification',
         objective: 'Classify hiring email',
         data: classification as unknown as Prisma.InputJsonValue,
-        confidence: 0.9,
+        confidence: preExtracted?.confidence || 0.9,
         sourceEvent: 'email.hiring.detected',
         sourceEmailId: data.emailId,
       },
@@ -97,7 +128,7 @@ export class EmailExtractionCapability implements IntelligenceCapability, OnModu
       type: 'email_classification',
       objective: 'Classify hiring email',
       data: classification as unknown as Record<string, unknown>,
-      confidence: 0.9,
+      confidence: preExtracted?.confidence || 0.9,
     });
 
     await this.eventBus.publish('intelligence.application.extracted', {
@@ -105,6 +136,9 @@ export class EmailExtractionCapability implements IntelligenceCapability, OnModu
       sourceEmailId: data.emailId,
       result: classification,
       emailDate: data.date,
+      threadId: data.threadId || null,
+      senderEmail: data.from,
+      senderName: data.fromName || null,
     });
 
     if (EmailExtractionCapability.DETAIL_CATEGORIES.has(classification.category)) {
@@ -118,6 +152,17 @@ export class EmailExtractionCapability implements IntelligenceCapability, OnModu
         details.application.companyName = classification.application.companyName;
         if (classification.application.jobTitle) {
           details.application.jobTitle = classification.application.jobTitle;
+        }
+
+        if (preExtracted) {
+          if (preExtracted.requisitionId && !details.application.notes) {
+            details.application.notes = `Requisition ID: ${preExtracted.requisitionId}`;
+          }
+          if (preExtracted.atsProvider && !details.application.notes) {
+            details.application.notes = `ATS: ${preExtracted.atsProvider}`;
+          } else if (preExtracted.atsProvider && details.application.notes) {
+            details.application.notes += ` | ATS: ${preExtracted.atsProvider}`;
+          }
         }
 
         await this.prisma.intelligenceArtifact.create({
@@ -144,6 +189,9 @@ export class EmailExtractionCapability implements IntelligenceCapability, OnModu
           sourceEmailId: data.emailId,
           result: details,
           emailDate: data.date,
+          threadId: data.threadId || null,
+          senderEmail: data.from,
+          senderName: data.fromName || null,
         });
       } catch (err) {
         console.warn(
@@ -154,5 +202,30 @@ export class EmailExtractionCapability implements IntelligenceCapability, OnModu
     }
 
     return { artifacts };
+  }
+
+  private extractCompanyFromEmail(fromEmail: string): string | null {
+    const domain = fromEmail.match(/@(.+)$/)?.[1];
+    if (!domain) return null;
+
+    const cleanDomain = domain
+      .replace(/^(mail|app|noreply|no-reply|donotreply|jobs|careers|recruiting)\./, '')
+      .replace(/\.(com|io|co|org|net)$/, '');
+
+    if (cleanDomain.length < 2) return null;
+
+    return cleanDomain.charAt(0).toUpperCase() + cleanDomain.slice(1);
+  }
+
+  private mapCategoryToStatus(category: string): string {
+    switch (category) {
+      case 'application_sent': return 'Applied';
+      case 'application_viewed': return 'Screening';
+      case 'interview_invite':
+      case 'interview_scheduled': return 'Interviewing';
+      case 'offer': return 'Offer';
+      case 'rejection': return 'Rejected';
+      default: return 'Saved';
+    }
   }
 }
